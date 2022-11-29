@@ -48,7 +48,10 @@ try: HLTProcessName
 except NameError:
     HLTProcessName='HLT'
 
-
+try: RUNPNET
+except NameError:
+    RUNPNET=True
+    
 ### ----------------------------------------------------------------------
 ### Trigger list
 ### ----------------------------------------------------------------------
@@ -430,16 +433,16 @@ process.jecSequence = cms.Sequence(process.patJetCorrFactorsUpdatedJEC *
                                    process.selectedUpdatedPatJetsUpdatedJEC)
 
 # Jet Selector after JEC and bTagging
-process.jets = cms.EDFilter("PATJetRefSelector",
-                            src = cms.InputTag("selectedUpdatedPatJetsUpdatedJEC"),
-                            cut = cms.string(JETCUT))
+from PhysicsTools.PatAlgos.selectionLayer1.jetSelector_cfi import selectedPatJets
+process.jets = selectedPatJets.clone(
+    src = cms.InputTag("selectedUpdatedPatJetsUpdatedJEC"),
+    cut = cms.string(JETCUT)
+)
 
 ##
 ## QG tagging for jets
 ##
-
 if COMPUTEQGVAR:
-
     QGlikelihood_tag = 'QGLikelihoodObject_v1_AK4PFchs'
     if YEAR == 2017 or YEAR == 2018:
       QGlikelihood_tag = 'QGLikelihoodObject_v1_AK4PFchs_2017'
@@ -464,7 +467,6 @@ if COMPUTEQGVAR:
     process.QGTagger.srcJets          = cms.InputTag("jets")    # Could be reco::PFJetCollection or pat::JetCollection (both AOD and miniAOD)
     process.QGTagger.jetsLabel        = cms.string('QGL_AK4PFchs')        # Other options: see https://twiki.cern.ch/twiki/bin/viewauth/CMS/QGDataBaseVersion
     process.jetSequence = cms.Sequence(process.jets * process.QGTagger)
-
 else:
     process.jetSequence = cms.Sequence(process.jets)
 
@@ -472,13 +474,10 @@ else:
 process.load("RecoJets.JetProducers.PileupJetID_cfi")
 from RecoJets.JetProducers.PileupJetID_cfi import _chsalgos_106X_UL16, _chsalgos_106X_UL16APV, _chsalgos_106X_UL18
 
-if YEAR == 2016:
-    
-    PUalgo = _chsalgos_106X_UL16APV
-    
+if YEAR == 2016:    
+    PUalgo = _chsalgos_106X_UL16APV    
     if PERIOD=='postVFP':
 	PUalgo = _chsalgos_106X_UL16
-
 if YEAR == 2018:
     PUalgo = _chsalgos_106X_UL18
 
@@ -490,6 +489,18 @@ process.pileupJetIdUpdated = process.pileupJetId.clone(
    algos = PUalgo
 )
 process.jetSequence += cms.Sequence(process.pileupJetIdUpdated)
+
+# Store PUID and QGL into an updated pat collection
+from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cfi import updatedPatJets
+process.jetsUpdated = updatedPatJets.clone(
+    jetSource = "jets",
+    addJetCorrFactors = False,
+)
+process.jetsUpdated.userData.userFloats.src += ["pileupJetIdUpdated:fullDiscriminant"]
+process.jetsUpdated.userData.userInts.src += ["pileupJetIdUpdated:fullId"]
+if COMPUTEQGVAR:
+    process.jetsUpdated.userData.userFloats.src += ["QGTagger:qgLikelihood"]
+process.jetSequence += process.jetsUpdated
 
 ##
 ## Build ll candidates (here OS)
@@ -602,7 +613,7 @@ else:
 if IsMC and APPLYMETCORR:
     if USEPAIRMET:
         process.selJetsForZrecoilCorrection = cms.EDFilter("PATJetSelector",
-            src = cms.InputTag("jets"),                                      
+            src = cms.InputTag("jetsUpdated"),                                      
             cut = cms.string("pt > 30. & abs(eta) < 4.7"), 
             filter = cms.bool(False)
         )
@@ -680,6 +691,7 @@ process.SVbypass = cms.EDProducer ("SVfitBypass",
 )
 
 
+    
 ## ----------------------------------------------------------------------
 ## Ntuplizer
 ## ----------------------------------------------------------------------
@@ -697,12 +709,11 @@ process.HTauTauTree = cms.EDAnalyzer("HTauTauNtuplizer",
                       rhoMiniRelIsoCollection = cms.InputTag("fixedGridRhoFastjetAll"),
                       rhoForJER = cms.InputTag("fixedGridRhoAll"), # FRA
                       PFCandCollection = cms.InputTag("packedPFCandidates"),
-                      jetCollection = cms.InputTag("jets"),
+                      jetCollection = cms.InputTag("jetsUpdated"),                    
                       JECset = cms.untracked.string(""),   # specified later
-                      pileupJetIdUpdatedDiscr = cms.InputTag("pileupJetIdUpdated", "fullDiscriminant"),
-                      pileupJetIdUpdatedWP    = cms.InputTag("pileupJetIdUpdated", "fullId"),
                       computeQGVar = cms.bool(COMPUTEQGVAR),
-                      QGTagger = cms.InputTag("QGTagger", "qgLikelihood"),
+                      QGLLabel = cms.string("QGTagger"),
+                      pileupJetIDLabel = cms.string("pileupJetIdUpdated"),
                       stage2TauCollection = cms.InputTag("caloStage2Digis","Tau"),
                       stage2JetCollection = cms.InputTag("caloStage2Digis","Jet"),
                       ak8jetCollection = cms.InputTag("slimmedJetsAK8"),
@@ -748,6 +759,95 @@ else:
     process.HTauTauTree.candCollection = cms.InputTag("SVllCand")
     process.SVFit = cms.Sequence (process.SVllCand)
 
+## evaluate PNET inference
+if RUNPNET:
+    
+    pnetAK4Discriminators = [];
+    pnetAK8Discriminators = [];
+
+    from LLRHiggsTauTau.NtupleProducer.ParticleNetFeatureEvaluator_cfi import ParticleNetFeatureEvaluator
+    process.ParticleNetTauAK4JetTagInfos = ParticleNetFeatureEvaluator.clone(
+        muons = cms.InputTag("slimmedMuons"),
+        electrons = cms.InputTag("slimmedElectrons"),
+        photons = cms.InputTag("slimmedPhotons"),
+        taus = cms.InputTag("slimmedTaus"),
+        vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
+        secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
+        pf_candidates = cms.InputTag("packedPFCandidates"),
+        jets = cms.InputTag("jetsUpdated"),
+        losttracks = cms.InputTag("lostTracks"),
+        jet_radius = cms.double(0.4),
+        min_jet_pt = cms.double(JPTPNETAK4),
+        max_jet_eta = cms.double(JETAPNETAK4),
+        min_pt_for_pfcandidates = cms.double(0.1),
+        min_pt_for_track_properties = cms.double(-1),
+        min_pt_for_losttrack = cms.double(1),
+        max_dr_for_losttrack = cms.double(0.2),
+        min_pt_for_taus = cms.double(20),
+        max_eta_for_taus = cms.double(2.5),
+        dump_feature_tree = cms.bool(False)
+    )
+
+    process.ParticleNetTauAK8JetTagInfos = ParticleNetFeatureEvaluator.clone(
+        muons = cms.InputTag("slimmedMuons"),
+        electrons = cms.InputTag("slimmedElectrons"),
+        photons = cms.InputTag("slimmedPhotons"),
+        taus = cms.InputTag("slimmedTaus"),
+        vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
+        secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
+        pf_candidates = cms.InputTag("packedPFCandidates"),
+        jets = cms.InputTag("slimmedJetsAK8"),
+        losttracks = cms.InputTag("lostTracks"),
+        jet_radius = cms.double(0.8),
+        min_jet_pt = cms.double(JPTPNETAK8),
+        max_jet_eta = cms.double(2.5),
+        min_pt_for_pfcandidates = cms.double(0.1),
+        min_pt_for_track_properties = cms.double(-1),
+        min_pt_for_losttrack = cms.double(1),
+        max_dr_for_losttrack = cms.double(0.2),
+        min_pt_for_taus = cms.double(20),
+        max_eta_for_taus = cms.double(2.5),
+        dump_feature_tree = cms.bool(False)
+    )
+    
+    from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
+
+    pnetAK4Discriminators.extend(['probmu','probele','probtaup1h0p','probtaup1h1p','probtaup1h2p','probtaup3h0p','probtaup3h1p','probtaum1h0p','probtaum1h1p','probtaum1h2p','probtaum3h0p','probtaum3h1p','probb','probc','probuds','probg','ptcorr','ptreshigh','ptreslow']);
+    pnetAK8Discriminators.extend(['probHtt','probHtm','probHte','probHbb','probHcc','probHqq','probHgg','probQCD2hf','probQCD1hf','probQCD0hf','masscorr']);
+
+    process.ParticleNetTauAK4JetTags = boostedJetONNXJetTagsProducer.clone();
+    process.ParticleNetTauAK4JetTags.src = cms.InputTag("ParticleNetTauAK4JetTagInfos");
+    process.ParticleNetTauAK4JetTags.flav_names = cms.vstring(pnetAK4Discriminators);
+    process.ParticleNetTauAK4JetTags.preprocess_json = cms.string('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK4/CHS/PNETUL/ClassRegLostTracks/preprocess.json');
+    process.ParticleNetTauAK4JetTags.model_path = cms.FileInPath('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK4/CHS/PNETUL/ClassRegLostTracks/particle-net.onnx');
+    process.ParticleNetTauAK4JetTags.debugMode = cms.untracked.bool(False)
+
+    process.ParticleNetTauAK8JetTags = boostedJetONNXJetTagsProducer.clone();
+    process.ParticleNetTauAK8JetTags.src = cms.InputTag("ParticleNetTauAK8JetTagInfos");
+    process.ParticleNetTauAK8JetTags.flav_names = cms.vstring(pnetAK8Discriminators)
+    process.ParticleNetTauAK8JetTags.preprocess_json = cms.string('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK8/Puppi/PNETUL/ClassReg/preprocess.json');
+    process.ParticleNetTauAK8JetTags.model_path = cms.FileInPath('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK8/Puppi/PNETUL/ClassReg/particle-net.onnx');
+    process.ParticleNetTauAK8JetTags.debugMode = cms.untracked.bool(False)
+
+    process.jetsAK8PNETUpdated = updatedPatJets.clone(
+        jetSource = "slimmedJetsAK8",
+        addJetCorrFactors = False
+    )
+    for s in pnetAK8Discriminators:
+        process.jetsAK8PNETUpdated.discriminatorSources.append("ParticleNetTauAK8JetTags:"+s)
+
+    process.jetsAK4PNETUpdated = updatedPatJets.clone(
+        jetSource = "jetsUpdated",
+        addJetCorrFactors = False
+    )
+    for s in pnetAK4Discriminators:
+        process.jetsAK4PNETUpdated.discriminatorSources.append("ParticleNetTauAK4JetTags:"+s)
+
+    process.HTauTauTree.pnetAK4DiscriminatorLabels = cms.vstring("ParticleNetTauAK4JetTags:"+s for s in pnetAK4Discriminators);
+    process.HTauTauTree.pnetAK8DiscriminatorLabels = cms.vstring("ParticleNetTauAK8JetTags:"+s for s in pnetAK8Discriminators);    
+    process.HTauTauTree.jetCollection = cms.InputTag("jetsAK4PNETUpdated")
+    process.HTauTauTree.ak8jetCollection = cms.InputTag("jetsAK8PNETUpdated")
+
 
 #print particles gen level - DEBUG purposes
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
@@ -771,15 +871,28 @@ process.Candidates = cms.Sequence(
     process.nEventsPassTrigger +
     process.egammaPostRecoSeq  +
     process.muons              +
-    process.electrons          + process.cleanSoftElectrons +
+    process.electrons          + 
+    process.cleanSoftElectrons +
     process.taus               +
     process.fsrSequence        +
-    process.softLeptons        + process.barellCand +
-    process.jecSequence        + process.jetSequence +
+    process.softLeptons        + 
+    process.barellCand         +
+    process.jecSequence        + 
+    process.jetSequence        +
     process.METSequence        +
     process.geninfo            +
     process.SVFit
     )
 # always run ntuplizer
+
+## add PNET jets to the path sequence
+if RUNPNET:
+    process.Candidates += process.ParticleNetTauAK4JetTagInfos
+    process.Candidates += process.ParticleNetTauAK8JetTagInfos
+    process.Candidates += process.ParticleNetTauAK4JetTags
+    process.Candidates += process.ParticleNetTauAK8JetTags
+    process.Candidates += process.jetsAK8PNETUpdated
+    process.Candidates += process.jetsAK4PNETUpdated
+
 process.trees = cms.EndPath(process.HTauTauTree)
 

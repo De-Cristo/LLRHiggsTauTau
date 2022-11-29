@@ -202,6 +202,10 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   //edm::InputTag triggerResultsLabel;
   edm::InputTag processName;
   //edm::InputTag triggerSet;
+  std::vector<std::string> pnetAK4DiscriminatorLabels;
+  std::vector<std::string> pnetAK8DiscriminatorLabels;
+  std::string QGLLabel;
+  std::string pileupJetIDLabel;
 
   HLTConfigProvider hltConfig_;
   //Output Objects
@@ -226,9 +230,6 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   edm::EDGetTokenT<edm::View<pat::CompositeCandidate>> theCandTag;
   edm::EDGetTokenT<edm::View<pat::Jet>> theJetTag;
   edm::EDGetTokenT<edm::View<pat::Jet>> theFatJetTag;
-  edm::EDGetTokenT<edm::ValueMap<float>> theQGTaggerTag;
-  edm::EDGetTokenT<edm::ValueMap<float>> theupdatedPileupJetIdDiscrTag;
-  edm::EDGetTokenT<edm::ValueMap<int>> theupdatedPileupJetIdWPTag;
   edm::EDGetTokenT<edm::View<reco::Candidate>> theLepTag;
   edm::EDGetTokenT<LHEEventProduct> theLHETag;
   edm::EDGetTokenT<GenEventInfoProduct> theGenTag;
@@ -755,7 +756,10 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _bdiscr20; // ParticleNetAK4JetTags_probb
   std::vector<Float_t> _bdiscr21; // ParticleNetAK4JetTags_probuds
   std::vector<Float_t> _bdiscr22; // ParticleNetAK4JetTags_probg
-  
+
+  std::map<std::string,std::vector<float> > _ak4_pnet_score;
+  std::map<std::string,std::vector<float> > _ak8_pnet_score;
+
   std::vector<Int_t> _jetID; //1=loose, 2=tight, 3=tightlepveto
   std::vector<Float_t> _jetrawf;
 
@@ -793,9 +797,6 @@ HTauTauNtuplizer::HTauTauNtuplizer(const edm::ParameterSet& pset) : //reweight()
   theCandTag           (consumes<edm::View<pat::CompositeCandidate>>     (pset.getParameter<edm::InputTag>("candCollection"))),
   theJetTag            (consumes<edm::View<pat::Jet>>                    (pset.getParameter<edm::InputTag>("jetCollection"))),
   theFatJetTag         (consumes<edm::View<pat::Jet>>                    (pset.getParameter<edm::InputTag>("ak8jetCollection"))),
-  theQGTaggerTag       (consumes<edm::ValueMap<float>>                   (pset.getParameter<edm::InputTag>("QGTagger"))),
-  theupdatedPileupJetIdDiscrTag (consumes<edm::ValueMap<float>>          (pset.getParameter<edm::InputTag>("pileupJetIdUpdatedDiscr"))),
-  theupdatedPileupJetIdWPTag    (consumes<edm::ValueMap<int>>            (pset.getParameter<edm::InputTag>("pileupJetIdUpdatedWP"))),
   theLepTag            (consumes<edm::View<reco::Candidate>>             (pset.getParameter<edm::InputTag>("lepCollection"))),
   theLHETag            (consumes<LHEEventProduct>                        (pset.getParameter<edm::InputTag>("lheCollection"))),
   theGenTag            (consumes<GenEventInfoProduct>                    (pset.getParameter<edm::InputTag>("genCollection"))),
@@ -820,19 +821,23 @@ HTauTauNtuplizer::HTauTauNtuplizer(const edm::ParameterSet& pset) : //reweight()
   prefweight_token     (consumes< double >                               (pset.getParameter<edm::InputTag>("L1prefireProb"))),
   prefweightup_token   (consumes< double >                               (pset.getParameter<edm::InputTag>("L1prefireProbUp"))),
   prefweightdown_token (consumes< double >                               (pset.getParameter<edm::InputTag>("L1prefireProbDown")))
-
  {
   theFileName = pset.getUntrackedParameter<string>("fileName");
   theFSR = pset.getParameter<bool>("applyFSR");
   theisMC = pset.getParameter<bool>("IsMC");
   doCPVariables = pset.getParameter<bool>("doCPVariables");
-  computeQGVar = pset.getParameter<bool>("computeQGVar");
   theJECName = pset.getUntrackedParameter<string>("JECset");
+  computeQGVar = pset.getParameter<bool>("computeQGVar");
   theYear = pset.getParameter<int>("year");
   // theUseNoHFPFMet = pset.getParameter<bool>("useNOHFMet");
   thePeriod = pset.getParameter<string>("period");
   //writeBestCandOnly = pset.getParameter<bool>("onlyBestCandidate");
   //sampleName = pset.getParameter<string>("sampleName");
+  pnetAK4DiscriminatorLabels = pset.existsAs<std::vector<std::string> > ("pnetAK4DiscriminatorLabels") ? pset.getParameter<std::vector<std::string>>("pnetAK4DiscriminatorLabels") : std::vector<std::string>();
+  pnetAK8DiscriminatorLabels = pset.existsAs<std::vector<std::string> > ("pnetAK8DiscriminatorLabels") ? pset.getParameter<std::vector<std::string>>("pnetAK8DiscriminatorLabels") : std::vector<std::string>();
+  QGLLabel =  pset.existsAs<std::string> ("QGLLabel") ? pset.getParameter<std::string> ("QGLLabel") : "";
+  pileupJetIDLabel =  pset.existsAs<std::string> ("pileupJetIDLabel") ? pset.getParameter<std::string> ("pileupJetIDLabel") : "";
+
   Nevt_Gen=0;
   Nevt_PassTrigger = 0;
   Npairs=0;
@@ -1263,6 +1268,9 @@ void HTauTauNtuplizer::Initialize(){
   _bdiscr21.clear();
   _bdiscr22.clear();
   
+  for(auto & imap : _ak4_pnet_score)
+    imap.second.clear();
+
   _jetID.clear();
   _jetrawf.clear();
   _jets_JER.clear(); // Jet Energy Resolution
@@ -1291,6 +1299,8 @@ void HTauTauNtuplizer::Initialize(){
   _ak8jets_particleNetJetTags_probHbb.clear();
   _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD.clear();
   _ak8jets_nsubjets.clear();
+  for(auto & imap : _ak8_pnet_score)
+    imap.second.clear();
 
   _subjets_px.clear();
   _subjets_py.clear();
@@ -1303,7 +1313,6 @@ void HTauTauNtuplizer::Initialize(){
   _subjets_deepFlavor_probbb.clear();
   _subjets_deepFlavor_problepb.clear();
   _subjets_ak8MotherIdx.clear();
-
 
 
   //_genH_px.clear();
@@ -1700,7 +1709,12 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("bParticleNetAK4JetTags_probb", &_bdiscr20);
   myTree->Branch("bParticleNetAK4JetTags_probuds", &_bdiscr21);
   myTree->Branch("bParticleNetAK4JetTags_probg", &_bdiscr22);
-  
+
+  for(const auto & label : pnetAK4DiscriminatorLabels){
+    _ak4_pnet_score[label] = std::vector<float>();
+    myTree->Branch(TString("b"+label).ReplaceAll(":","_").Data(),"std::vector<float>", &_ak4_pnet_score[label]);
+  }
+      
   myTree->Branch("PFjetID",&_jetID);
   myTree->Branch("jetRawf",&_jetrawf);
   myTree->Branch("jets_JER",&_jets_JER);
@@ -1731,6 +1745,11 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("ak8jets_particleNetJetTags_probHbb", &_ak8jets_particleNetJetTags_probHbb);
   myTree->Branch("ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD", &_ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD);
   myTree->Branch("ak8jets_nsubjets", &_ak8jets_nsubjets);
+
+  for(const auto & label : pnetAK8DiscriminatorLabels){
+    _ak8_pnet_score[label] = std::vector<float>();
+    myTree->Branch(TString("b"+label).ReplaceAll(":","_").Data(),"std::vector<float>", &_ak8_pnet_score[label]);
+  }
 
   myTree->Branch("subjets_px", &_subjets_px);
   myTree->Branch("subjets_py", &_subjets_py);
@@ -1892,9 +1911,6 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
   edm::Handle<edm::View<reco::Candidate>>dauHandle;
   edm::Handle<edm::View<pat::Jet>>jetHandle;
   edm::Handle<edm::View<pat::Jet>>fatjetHandle;
-  edm::Handle<edm::ValueMap<float>>qgTaggerHandle;
-  edm::Handle<edm::ValueMap<float>>updatedPileupJetIdDiscrHandle;
-  edm::Handle<edm::ValueMap<int>>updatedPileupJetIdWPHandle;
   edm::Handle<BXVector<l1t::Tau>>L1TauHandle;
   edm::Handle<BXVector<l1t::Jet>>L1JetHandle;
   edm::Handle<pat::METCollection> metHandle;
@@ -1918,10 +1934,6 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
 
   event.getByToken(theCandTag,candHandle);
   event.getByToken(theJetTag,jetHandle);
-  if(computeQGVar)
-    event.getByToken(theQGTaggerTag,qgTaggerHandle);
-  event.getByToken(theupdatedPileupJetIdDiscrTag,updatedPileupJetIdDiscrHandle);
-  event.getByToken(theupdatedPileupJetIdWPTag,updatedPileupJetIdWPHandle);
   event.getByToken(theL1TauTag,L1TauHandle);
   event.getByToken(theL1JetTag,L1JetHandle);
   event.getByToken(theFatJetTag,fatjetHandle);
@@ -2030,7 +2042,7 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
     _prefiringweightup =(*theprefweightup);
     _prefiringweightdown =(*theprefweightdown);
   }
-
+  
   //Do all the stuff here
   //Compute the variables needed for the output and store them in the ntuple
   if(DEBUG)printf("===New Event===\n");
@@ -2054,27 +2066,21 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
   if(writeJets){
     //_numberOfJets = FillJet(jets, event, &jecUnc);
     _numberOfJets = FillJet(jets, event, eSetup);
-
     if(computeQGVar){ //Needs jetHandle + qgTaggerHandle
       for(auto jet = jetHandle->begin(); jet != jetHandle->end(); ++jet){
-        edm::RefToBase<pat::Jet> jetRef(edm::Ref<edm::View<pat::Jet> >(jetHandle, jet - jetHandle->begin()));
-        float qgLikelihood = (*qgTaggerHandle)[jetRef];
-        _jets_QGdiscr.push_back(qgLikelihood);
+	_jets_QGdiscr.push_back(jet->userFloat(QGLLabel+":qgLikelihood"));
       }
     }
     // Add updated PUjetID
     for(auto jet = jetHandle->begin(); jet != jetHandle->end(); ++jet)
     {
-      edm::RefToBase<pat::Jet> jetRef(edm::Ref<edm::View<pat::Jet> >(jetHandle, jet - jetHandle->begin()));
-      float updatedPUdiscriminator = (*updatedPileupJetIdDiscrHandle)[jetRef];
-      int updatedPUwps = (*updatedPileupJetIdWPHandle)[jetRef];
-      _jets_PUJetIDupdated.push_back(updatedPUdiscriminator);
-      _jets_PUJetIDupdated_WP .push_back(updatedPUwps);
+      _jets_PUJetIDupdated.push_back(jet->userFloat(pileupJetIDLabel+":fullDiscriminant"));
+      _jets_PUJetIDupdated_WP.push_back(jet->userInt(pileupJetIDLabel+":fullId"));
     }
   }
   if(writeFatJets) FillFatJet(fatjets, event);
   if(writeL1 && theisMC) FillL1Obj(L1Tau, L1Jet, event);
-
+  
   //Loop on pairs
   std::vector<pat::CompositeCandidate> candVector;
   for(edm::View<pat::CompositeCandidate>::const_iterator candi = cands->begin(); candi!=cands->end();++candi){
@@ -2139,7 +2145,7 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
     _metCov10.push_back(cand.userFloat("MEt_cov10"));
     _metCov11.push_back(cand.userFloat("MEt_cov11"));
     _metSignif.push_back(cand.userFloat("MEt_significance"));
-    
+
     //if(DEBUG){
       //motherPoint[iMot]=dynamic_cast<const reco::Candidate*>(&*candi);
       //printf("%p %p %p\n",motherPoint[iMot],cand.daughter(0),cand.daughter(1));
@@ -2416,6 +2422,9 @@ int HTauTauNtuplizer::FillJet(const edm::View<pat::Jet> *jets, const edm::Event&
     _bdiscr21.push_back(ijet->bDiscriminator("pfParticleNetAK4JetTags:probuds"));
     _bdiscr22.push_back(ijet->bDiscriminator("pfParticleNetAK4JetTags:probg"));
 
+    for(auto & ilabel : pnetAK4DiscriminatorLabels)
+      _ak4_pnet_score[ilabel].push_back(ijet->bDiscriminator(ilabel)); 
+
     //PF jet ID
     float NHF                 = ijet->neutralHadronEnergyFraction();
     float NEMF                = ijet->neutralEmEnergyFraction();
@@ -2690,6 +2699,9 @@ void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm:
       _ak8jets_deepBoostedJetTags_probHbb.push_back(ijet->bDiscriminator("pfDeepBoostedJetTags:probHbb"));
       _ak8jets_particleNetJetTags_probHbb.push_back(ijet->bDiscriminator("pfParticleNetJetTags:probHbb"));
       _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD.push_back(ijet->bDiscriminator("pfParticleNetDiscriminatorsJetTags:HbbvsQCD"));
+
+      for(auto & ilabel : pnetAK8DiscriminatorLabels)
+      _ak8_pnet_score[ilabel].push_back(ijet->bDiscriminator(ilabel)); 
 
       // store subjets for soft drop
       int nsubj = 0;
@@ -3784,7 +3796,7 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
       indexOfPath.push_back(j);
       foundPaths.push_back(pathName);
 
-      cout << j << " - TTT: " << pathName << endl;
+      //cout << j << " - TTT: " << pathName << endl;
     //    edm::LogInfo("AnalyzeRates")<<"Added path "<<pathName<<" to foundPaths";
     } 
   }

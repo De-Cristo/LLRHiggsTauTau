@@ -36,9 +36,14 @@ APPLYTESCORRECTION=True # shift the central value of the tau energy scale before
 COMPUTEUPDOWNSVFIT=False # compute SVfit for up/down TES variation
 COMPUTEMETUPDOWNSVFIT=False # compute SVfit for up/down MET JES variation
 doCPVariables=False # compute CP variables and PV refit
-COMPUTEQGVAR = False # compute QG Tagger for jets
+COMPUTEQGVAR=False # compute QG Tagger for jets
 IsMC=True
 Is25ns=True
+RUNPNET=True
+JPTPNETAK4=25
+JETAPNETAK4=2.5
+JPTPNETAK8=180
+
 HLTProcessName='HLT' #Different names possible, check e.g. at https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD.
 if not IsMC:
     HLTProcessName='HLT' #It always 'HLT' for real data
