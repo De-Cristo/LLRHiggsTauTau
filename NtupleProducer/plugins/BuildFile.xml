@@ -18,8 +18,6 @@
 <use name="RecoBTag/FeatureTools"/>
 <use name="HTT-utilities/RecoilCorrections" />
 <use name="RecoVertex/AdaptiveVertexFit"/>
-<library   file="*.cc" name="LLRHiggsTauTauPlugins">
-<flags  EDM_PLUGIN="1"/>
+<library file="*.cc" name="LLRHiggsTauTauPlugins">
+  <flags EDM_PLUGIN="1"/>
 </library>
-
-  

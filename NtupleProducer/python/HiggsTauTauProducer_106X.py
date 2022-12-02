@@ -472,12 +472,14 @@ else:
 
 # Add latest pileup jet ID
 process.load("RecoJets.JetProducers.PileupJetID_cfi")
-from RecoJets.JetProducers.PileupJetID_cfi import _chsalgos_106X_UL16, _chsalgos_106X_UL16APV, _chsalgos_106X_UL18
+from RecoJets.JetProducers.PileupJetID_cfi import _chsalgos_106X_UL16, _chsalgos_106X_UL16APV, _chsalgos_106X_UL17, _chsalgos_106X_UL18
 
 if YEAR == 2016:    
     PUalgo = _chsalgos_106X_UL16APV    
     if PERIOD=='postVFP':
 	PUalgo = _chsalgos_106X_UL16
+if YEAR == 2017:
+    PUalgo = _chsalgos_106X_UL17
 if YEAR == 2018:
     PUalgo = _chsalgos_106X_UL18
 
