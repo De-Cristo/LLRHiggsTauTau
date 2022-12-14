@@ -70,7 +70,8 @@ COMPUTEQGVAR = False # compute QG Tagger for jets
 IsMC = options.mc
 Is25ns=True
 RUNPNET=True
-JPTPNETAK4=25
+RUNBJEREG=True
+JPTPNETAK4=15
 JETAPNETAK4=2.5
 JPTPNETAK8=180
 

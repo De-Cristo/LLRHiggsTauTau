@@ -191,6 +191,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   Bool_t theisMC;
   Bool_t doCPVariables;
   Bool_t computeQGVar;
+  Bool_t computeBjetReg;
   string theJECName;
   Int_t  theYear;
   string thePeriod;
@@ -205,6 +206,7 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<std::string> pnetAK4DiscriminatorLabels;
   std::vector<std::string> pnetAK8DiscriminatorLabels;
   std::string QGLLabel;
+  std::string BJetRegLabel;
   std::string pileupJetIDLabel;
 
   HLTConfigProvider hltConfig_;
@@ -757,6 +759,9 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _bdiscr21; // ParticleNetAK4JetTags_probuds
   std::vector<Float_t> _bdiscr22; // ParticleNetAK4JetTags_probg
 
+  std::vector<Float_t> _jets_bjetreg_corr;
+  std::vector<Float_t> _jets_bjetreg_res;
+
   std::map<std::string,std::vector<float> > _ak4_pnet_score;
   std::map<std::string,std::vector<float> > _ak8_pnet_score;
 
@@ -828,6 +833,7 @@ HTauTauNtuplizer::HTauTauNtuplizer(const edm::ParameterSet& pset) : //reweight()
   doCPVariables = pset.getParameter<bool>("doCPVariables");
   theJECName = pset.getUntrackedParameter<string>("JECset");
   computeQGVar = pset.getParameter<bool>("computeQGVar");
+  computeBjetReg = pset.getParameter<bool>("computeBjetReg");
   theYear = pset.getParameter<int>("year");
   // theUseNoHFPFMet = pset.getParameter<bool>("useNOHFMet");
   thePeriod = pset.getParameter<string>("period");
@@ -836,6 +842,7 @@ HTauTauNtuplizer::HTauTauNtuplizer(const edm::ParameterSet& pset) : //reweight()
   pnetAK4DiscriminatorLabels = pset.existsAs<std::vector<std::string> > ("pnetAK4DiscriminatorLabels") ? pset.getParameter<std::vector<std::string>>("pnetAK4DiscriminatorLabels") : std::vector<std::string>();
   pnetAK8DiscriminatorLabels = pset.existsAs<std::vector<std::string> > ("pnetAK8DiscriminatorLabels") ? pset.getParameter<std::vector<std::string>>("pnetAK8DiscriminatorLabels") : std::vector<std::string>();
   QGLLabel =  pset.existsAs<std::string> ("QGLLabel") ? pset.getParameter<std::string> ("QGLLabel") : "";
+  BJetRegLabel =  pset.existsAs<std::string> ("QGLLabel") ? pset.getParameter<std::string> ("BJetRegLabel") : "";
   pileupJetIDLabel =  pset.existsAs<std::string> ("pileupJetIDLabel") ? pset.getParameter<std::string> ("pileupJetIDLabel") : "";
 
   Nevt_Gen=0;
@@ -1244,6 +1251,8 @@ void HTauTauNtuplizer::Initialize(){
   _jets_HadronFlavour.clear();
   _jets_genjetIndex.clear();
   _jets_QGdiscr.clear();
+  _jets_bjetreg_corr.clear();
+  _jets_bjetreg_res.clear();
   _numberOfJets=0;
   _bdiscr.clear();
   _bdiscr2.clear();
@@ -1686,7 +1695,7 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("jets_MUF"    , &_jets_MUF);
   myTree->Branch("jets_neMult" , &_jets_neMult);
   myTree->Branch("jets_chMult" , &_jets_chMult);
-
+  
   myTree->Branch("bDiscriminator",&_bdiscr);
   myTree->Branch("bCSVscore",&_bdiscr2);
   myTree->Branch("pfCombinedMVAV2BJetTags",&_bdiscr3);
@@ -1709,6 +1718,9 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("bParticleNetAK4JetTags_probb", &_bdiscr20);
   myTree->Branch("bParticleNetAK4JetTags_probuds", &_bdiscr21);
   myTree->Branch("bParticleNetAK4JetTags_probg", &_bdiscr22);
+
+  myTree->Branch("jets_bjetRegCorr",&_jets_bjetreg_corr);
+  myTree->Branch("jets_bjetRegRes",&_jets_bjetreg_res);
 
   for(const auto & label : pnetAK4DiscriminatorLabels){
     _ak4_pnet_score[label] = std::vector<float>();
@@ -2076,6 +2088,13 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
     {
       _jets_PUJetIDupdated.push_back(jet->userFloat(pileupJetIDLabel+":fullDiscriminant"));
       _jets_PUJetIDupdated_WP.push_back(jet->userInt(pileupJetIDLabel+":fullId"));
+    }
+    // add bjet energy regresssion
+    if(computeBjetReg){
+      for(auto jet = jetHandle->begin(); jet != jetHandle->end(); ++jet){      
+	_jets_bjetreg_corr.push_back(jet->userFloat(BJetRegLabel+":corr"));
+	_jets_bjetreg_res.push_back(jet->userFloat(BJetRegLabel+":res"));
+      }
     }
   }
   if(writeFatJets) FillFatJet(fatjets, event);

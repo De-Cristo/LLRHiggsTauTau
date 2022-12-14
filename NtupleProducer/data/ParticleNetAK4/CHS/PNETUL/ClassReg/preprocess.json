@@ -87,12 +87,8 @@
       "jet_pfcand_electron_detaIn",
       "jet_pfcand_electron_dphiIn",
       "jet_pfcand_electron_sigIetaIeta",
-      "jet_pfcand_electron_sigIphiIphi",
       "jet_pfcand_electron_r9",
-      "jet_pfcand_electron_convProb",
-      "jet_pfcand_photon_sigIetaIeta",
-      "jet_pfcand_photon_r9",
-      "jet_pfcand_photon_eVeto"
+      "jet_pfcand_electron_convProb"
     ],
     "var_infos": {
       "jet_pfcand_pt_log": {
@@ -343,14 +339,6 @@
         "upper_bound": 5,
         "pad": 0
       },
-      "jet_pfcand_electron_sigIphiIphi": {
-        "median": 0.001,
-        "norm_factor": 100,
-        "replace_inf_value": 0,
-        "lower_bound": -5,
-        "upper_bound": 5,
-        "pad": 0
-      },
       "jet_pfcand_electron_r9": {
         "median": 0,
         "norm_factor": 1,
@@ -360,30 +348,6 @@
         "pad": 0
       },
       "jet_pfcand_electron_convProb": {
-        "median": 0,
-        "norm_factor": 1,
-        "replace_inf_value": 0,
-        "lower_bound": -1e+32,
-        "upper_bound": 1e+32,
-        "pad": 0
-      },
-      "jet_pfcand_photon_sigIetaIeta": {
-        "median": 0.002,
-        "norm_factor": 50,
-        "replace_inf_value": 0,
-        "lower_bound": -5,
-        "upper_bound": 5,
-        "pad": 0
-      },
-      "jet_pfcand_photon_r9": {
-        "median": 0,
-        "norm_factor": 1,
-        "replace_inf_value": 0,
-        "lower_bound": 0,
-        "upper_bound": 1,
-        "pad": 0
-      },
-      "jet_pfcand_photon_eVeto": {
         "median": 0,
         "norm_factor": 1,
         "replace_inf_value": 0,

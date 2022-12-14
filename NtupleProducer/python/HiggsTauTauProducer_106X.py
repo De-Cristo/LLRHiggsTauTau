@@ -32,7 +32,6 @@ except NameError:
 try: Is25ns
 except NameError:
     Is25ns=True
-
 try: USE_NOHFMET
 except NameError:
     USE_NOHFMET=False
@@ -43,14 +42,15 @@ if USE_NOHFMET: PFMetName = "slimmedMETsNoHF"
 try: APPLYMETCORR
 except NameError:
     APPLYMETCORR=True
-
 try: HLTProcessName
 except NameError:
     HLTProcessName='HLT'
-
 try: RUNPNET
 except NameError:
     RUNPNET=True
+try: RUNBJETREG
+except NameError:
+    RUNBJETREG=True
     
 ### ----------------------------------------------------------------------
 ### Trigger list
@@ -164,30 +164,29 @@ PrefiringRateSystematicUnctyMuon = cms.double(0.2)
 #)
 
 #MC stuff
-
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.drawTree = cms.EDAnalyzer("ParticleTreeDrawer",
-                                   src = cms.InputTag("prunedGenParticles"),
-                                   printP4 = cms.untracked.bool(False),
-                                   printPtEtaPhi = cms.untracked.bool(False),
-                                   printVertex = cms.untracked.bool(False),
-                                   printStatus = cms.untracked.bool(True),
-                                   printIndex = cms.untracked.bool(False) )
+        src = cms.InputTag("prunedGenParticles"),
+        printP4 = cms.untracked.bool(False),
+        printPtEtaPhi = cms.untracked.bool(False),
+        printVertex = cms.untracked.bool(False),
+        printStatus = cms.untracked.bool(True),
+        printIndex = cms.untracked.bool(False) 
+)
 
 
 process.printTree = cms.EDAnalyzer("ParticleListDrawer",
-                                   maxEventsToPrint = cms.untracked.int32(-1),
-                                   printVertex = cms.untracked.bool(False),
-                                   src = cms.InputTag("prunedGenParticles")
-                                   )
-
+        maxEventsToPrint = cms.untracked.int32(-1),
+        printVertex = cms.untracked.bool(False),
+        src = cms.InputTag("prunedGenParticles")
+)
 
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
-                                                   calibratedPatElectrons = cms.PSet(
-                                                       initialSeed = cms.untracked.uint32(1),
-                                                       engineName = cms.untracked.string('TRandom3')
-                                                       ),
-                                                   )
+        calibratedPatElectrons = cms.PSet(
+        initialSeed = cms.untracked.uint32(1),
+        engineName = cms.untracked.string('TRandom3')
+        )
+)
 
 
 process.goodPrimaryVertices = cms.EDFilter("VertexSelector",
@@ -195,7 +194,6 @@ process.goodPrimaryVertices = cms.EDFilter("VertexSelector",
   cut = cms.string(PVERTEXCUT),
   filter = cms.bool(False), # if True, rejects events . if False, produce emtpy vtx collection
 )
-
 
 process.bareSoftMuons = cms.EDFilter("PATMuonRefSelector",
     src = cms.InputTag("slimmedMuons"),
@@ -246,8 +244,10 @@ if YEAR == 2018:
   EgammaPostRecoSeq_ERA = '2018-UL'       # 2018 data
 
 from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
-setupEgammaPostRecoSeq(process,
-                       era=EgammaPostRecoSeq_ERA)    
+setupEgammaPostRecoSeq(
+    process,
+    era=EgammaPostRecoSeq_ERA
+)    
 		       
 process.softElectrons = cms.EDProducer("EleFiller",
    src    = cms.InputTag("slimmedElectrons"),
@@ -257,7 +257,7 @@ process.softElectrons = cms.EDProducer("EleFiller",
    sampleType = cms.int32(LEPTON_SETUP),          
    setup = cms.int32(LEPTON_SETUP), # define the set of effective areas, rho corrections, etc.
    cut = cms.string(ELECUT)
-   )
+)
 
 process.electrons = cms.Sequence(process.softElectrons+process.egammaPostRecoSeq)
 
@@ -296,7 +296,7 @@ process.cleanSoftElectrons = cms.EDProducer("PATElectronCleaner",
 process.bareTaus = cms.EDFilter("PATTauRefSelector",
    src = cms.InputTag("slimmedTaus"), 
    cut = cms.string(TAUCUT),
-   )
+)
 
 ##NOT USED FOR NOW, TBD Later
 process.cleanTaus = cms.EDProducer("PATTauCleaner",
@@ -307,8 +307,7 @@ process.cleanTaus = cms.EDProducer("PATTauCleaner",
             ' tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits") > 0.5 &'
             ' tauID("againstMuonTight") > 0.5 &'
             ' tauID("againstElectronMedium") > 0.5'
-        ),
-    
+    ),                                   
    # overlap checking configurables
    checkOverlaps = cms.PSet(
       muons = cms.PSet(
@@ -330,8 +329,8 @@ process.cleanTaus = cms.EDProducer("PATTauCleaner",
           requireNoOverlaps   = cms.bool(False), # overlaps don't cause the electron to be discared
           ),
       ),
-        # finalCut (any string-based cut on pat::Tau)
-        finalCut = cms.string(' '),
+    # finalCut (any string-based cut on pat::Tau)
+    finalCut = cms.string(' '),
 )
 
 # TES: https://github.com/cms-tau-pog/TauIDSFs
@@ -386,7 +385,7 @@ process.appendPhotons = cms.EDProducer("LeptonPhotonMatcher",
     electronSrc = cms.InputTag("cleanSoftElectrons"),
     photonSrc = cms.InputTag("boostedFsrPhotons"),#cms.InputTag("cmgPhotonSel"),
     matchFSR = cms.bool(True)
-    )
+)
 
 process.fsrSequence = cms.Sequence(process.fsrPhotonSequence + process.appendPhotons)
 muString = "appendPhotons:muons"
@@ -428,9 +427,10 @@ updateJetCollection(
 )
 
 # Update the jet sequences
-process.jecSequence = cms.Sequence(process.patJetCorrFactorsUpdatedJEC *
-                                   process.updatedPatJetsUpdatedJEC *
-                                   process.selectedUpdatedPatJetsUpdatedJEC)
+process.jecSequence = cms.Sequence(
+    process.patJetCorrFactorsUpdatedJEC *
+    process.updatedPatJetsUpdatedJEC *
+    process.selectedUpdatedPatJetsUpdatedJEC)
 
 # Jet Selector after JEC and bTagging
 from PhysicsTools.PatAlgos.selectionLayer1.jetSelector_cfi import selectedPatJets
@@ -500,9 +500,92 @@ process.jetsUpdated = updatedPatJets.clone(
 )
 process.jetsUpdated.userData.userFloats.src += ["pileupJetIdUpdated:fullDiscriminant"]
 process.jetsUpdated.userData.userInts.src += ["pileupJetIdUpdated:fullId"]
+
 if COMPUTEQGVAR:
     process.jetsUpdated.userData.userFloats.src += ["QGTagger:qgLikelihood"]
-process.jetSequence += process.jetsUpdated
+
+if RUNBJETREG:
+
+    process.bJetVars = cms.EDProducer("JetRegressionVarProducer",
+            pvsrc = cms.InputTag("offlineSlimmedPrimaryVertices"),
+            src   = cms.InputTag("jets"),
+            svsrc = cms.InputTag("slimmedSecondaryVertices"),
+            gpsrc = cms.InputTag("prunedGenParticles")
+    )
+
+    process.jetsUpdated.userData.userFloats.src += [
+        "bJetVars:leadTrackPt",
+        "bJetVars:leptonPtRelv0",
+        "bJetVars:leptonPtRelInvv0",
+        "bJetVars:leptonDeltaR",
+        "bJetVars:vtxPt",
+        "bJetVars:vtxMass",
+        "bJetVars:vtx3dL",
+        "bJetVars:vtx3deL",
+        "bJetVars:ptD"
+    ]
+    process.jetsUpdated.userData.userInts.src += [
+        "bJetVars:vtxNtrk",
+        "bJetVars:leptonPdgId"
+    ]
+
+    process.bjetRegressionNN = cms.EDProducer("BJetEnergyRegressionMVA",
+        backend = cms.string("TF"),
+        src = cms.InputTag("jetsUpdated"),
+        pvsrc = cms.InputTag("offlineSlimmedPrimaryVertices"),
+        svsrc = cms.InputTag("slimmedSecondaryVertices"),
+        rhosrc = cms.InputTag("fixedGridRhoFastjetAll"),
+        weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2018.pb"),
+        name = cms.string("JetRegNN"),
+        isClassifier = cms.bool(False),
+        variablesOrder = cms.vstring([
+            "Jet_pt","Jet_eta","rho","Jet_mt","Jet_leadTrackPt","Jet_leptonPtRel","Jet_leptonDeltaR","Jet_neHEF",
+            "Jet_neEmEF","Jet_vtxPt","Jet_vtxMass","Jet_vtx3dL","Jet_vtxNtrk","Jet_vtx3deL",
+            "Jet_numDaughters_pt03","Jet_energyRing_dR0_em_Jet_rawEnergy","Jet_energyRing_dR1_em_Jet_rawEnergy",
+            "Jet_energyRing_dR2_em_Jet_rawEnergy","Jet_energyRing_dR3_em_Jet_rawEnergy","Jet_energyRing_dR4_em_Jet_rawEnergy",
+            "Jet_energyRing_dR0_neut_Jet_rawEnergy","Jet_energyRing_dR1_neut_Jet_rawEnergy","Jet_energyRing_dR2_neut_Jet_rawEnergy",
+            "Jet_energyRing_dR3_neut_Jet_rawEnergy","Jet_energyRing_dR4_neut_Jet_rawEnergy","Jet_energyRing_dR0_ch_Jet_rawEnergy",
+            "Jet_energyRing_dR1_ch_Jet_rawEnergy","Jet_energyRing_dR2_ch_Jet_rawEnergy","Jet_energyRing_dR3_ch_Jet_rawEnergy",
+            "Jet_energyRing_dR4_ch_Jet_rawEnergy","Jet_energyRing_dR0_mu_Jet_rawEnergy","Jet_energyRing_dR1_mu_Jet_rawEnergy",
+            "Jet_energyRing_dR2_mu_Jet_rawEnergy","Jet_energyRing_dR3_mu_Jet_rawEnergy","Jet_energyRing_dR4_mu_Jet_rawEnergy",
+            "Jet_chHEF","Jet_chEmEF","Jet_leptonPtRelInv","isEle","isMu","isOther","Jet_mass","Jet_ptd"
+        ]),
+        variables = cms.PSet(
+           Jet_pt = cms.string("pt*jecFactor('Uncorrected')"),
+           Jet_mt = cms.string("mt*jecFactor('Uncorrected')"),
+           Jet_eta = cms.string("eta"),
+           Jet_mass = cms.string("mass*jecFactor('Uncorrected')"),
+           Jet_ptd = cms.string("userFloat('bJetVars:ptD')"),
+           Jet_leadTrackPt = cms.string("userFloat('bJetVars:leadTrackPt')"),
+           Jet_vtxNtrk = cms.string("userInt('bJetVars:vtxNtrk')"),
+           Jet_vtxMass = cms.string("userFloat('bJetVars:vtxMass')"),
+           Jet_vtx3dL = cms.string("userFloat('bJetVars:vtx3dL')"),
+           Jet_vtx3deL = cms.string("userFloat('bJetVars:vtx3deL')"),
+           Jet_vtxPt = cms.string("userFloat('bJetVars:vtxPt')"),
+           Jet_leptonPtRel = cms.string("userFloat('bJetVars:leptonPtRelv0')"),
+           Jet_leptonPtRelInv = cms.string("userFloat('bJetVars:leptonPtRelInvv0')*jecFactor('Uncorrected')"),
+           Jet_leptonDeltaR = cms.string("userFloat('bJetVars:leptonDeltaR')"),
+           Jet_neHEF = cms.string("neutralHadronEnergyFraction()"),
+           Jet_neEmEF = cms.string("neutralEmEnergyFraction()"),
+           Jet_chHEF = cms.string("chargedHadronEnergyFraction()"),
+           Jet_chEmEF = cms.string("chargedEmEnergyFraction()"),
+           isMu = cms.string("?abs(userInt('bJetVars:leptonPdgId'))==13?1:0"),
+           isEle = cms.string("?abs(userInt('bJetVars:leptonPdgId'))==11?1:0"),
+           isOther = cms.string("?userInt('bJetVars:leptonPdgId')==0?1:0"),
+        ),
+        inputTensorName = cms.string("ffwd_inp:0"),
+        outputTensorName = cms.string("ffwd_out/BiasAdd:0"),
+        outputNames = cms.vstring(["corr","res"]),
+        outputFormulas = cms.vstring(["at(0)*0.27912887930870056+1.0545977354049683","0.5*(at(2)-at(1))*0.27912887930870056"])
+        )
+
+    process.jetSequence += process.bJetVars
+    process.jetSequence += process.jetsUpdated
+    process.jetSequence += process.bjetRegressionNN
+
+else:                                        
+    process.jetSequence += process.jetsUpdated
+
 
 ##
 ## Build ll candidates (here OS)
@@ -512,10 +595,11 @@ checkcharge=False
 if BUILDONLYOS:
     decayString="softLeptons@+ softLeptons@-"
     checkcharge=True
+
 process.barellCand = cms.EDProducer("CandViewShallowCloneCombiner",
-                                    decay = cms.string(decayString),
-                                    cut = cms.string(LLCUT),
-                                    checkCharge = cms.bool(checkcharge)
+        decay = cms.string(decayString),
+        cut = cms.string(LLCUT),
+        checkCharge = cms.bool(checkcharge)
 )
 
 ## ----------------------------------------------------------------------
@@ -552,53 +636,50 @@ if USEPAIRMET:
 
     process.METSequence += cms.Sequence(process.MVAMETInputs + process.MVAMET)
 
-
 else:
     print "Using event pfMET (same MET for all pairs)"
 
     PFMetName = "slimmedMETs"
     uncorrPFMetTag = cms.InputTag(PFMetName)
 
-
     # patch to get a standalone MET significance collection
     process.METSignificance = cms.EDProducer ("ExtractMETSignificance",
-                                                  #srcMET=cms.InputTag(PFMetName,"","TEST")
-                                                  srcMET=uncorrPFMetTag
-                                                  )
-
+            #srcMET=cms.InputTag(PFMetName,"","TEST")
+            srcMET=uncorrPFMetTag
+    )
+    
     # add variables with MET shifted for TES corrections
     process.ShiftMETforTES = cms.EDProducer ("ShiftMETforTES",
-                                             #srcMET  = cms.InputTag(PFMetName,"","TEST"),
-                                             srcMET  = uncorrPFMetTag,
-                                             tauCollection = cms.InputTag("softTaus")
-                                             )
+            #srcMET  = cms.InputTag(PFMetName,"","TEST"),
+            srcMET  = uncorrPFMetTag,
+            tauCollection = cms.InputTag("softTaus")
+    )
 
     # add variables with MET shifted for EES corrections (E->tau ES)
     process.ShiftMETforEES = cms.EDProducer ("ShiftMETforEES",
-                                             #srcMET  = cms.InputTag(PFMetName,"","TEST"),
-                                             srcMET  = uncorrPFMetTag,
-                                             tauCollection = cms.InputTag("softTaus")
-                                             )
+            #srcMET  = cms.InputTag(PFMetName,"","TEST"),
+            srcMET  = uncorrPFMetTag,
+            tauCollection = cms.InputTag("softTaus")
+    )
 
     # Shift met due to central corrections of TES and EES
     process.ShiftMETcentral = cms.EDProducer ("ShiftMETcentral",
-                                              srcMET = uncorrPFMetTag,
-                                              tauUncorrected = cms.InputTag("bareTaus"),
-                                              tauCorrected = cms.InputTag("softTaus")
-                                              )
-
+            srcMET = uncorrPFMetTag,
+            tauUncorrected = cms.InputTag("bareTaus"),
+            tauCorrected = cms.InputTag("softTaus")
+    )
 
     # Get a standalone Puppi MET significance collection
     process.PuppiMETSignificance = cms.EDProducer ("ExtractMETSignificance",
-                                                   srcMET=cms.InputTag("slimmedMETsPuppi")
-                                                  )
+            srcMET=cms.InputTag("slimmedMETsPuppi")
+    )
 
     # Shift PUPPI met due to central corrections of TES and EES
     process.ShiftPuppiMETcentral = cms.EDProducer ("ShiftMETcentral",
-                                                   srcMET = cms.InputTag("slimmedMETsPuppi"),
-                                                   tauUncorrected = cms.InputTag("bareTaus"),
-                                                   tauCorrected = cms.InputTag("softTaus")
-                                                  )
+            srcMET = cms.InputTag("slimmedMETsPuppi"),
+            tauUncorrected = cms.InputTag("bareTaus"),
+            tauCorrected = cms.InputTag("softTaus")
+    )
 
     process.METSequence += process.METSignificance
     process.METSequence += process.ShiftMETforTES
@@ -644,107 +725,98 @@ else:
 ## SV fit
 ## ----------------------------------------------------------------------
 #if USECLASSICSVFIT:
-#    print "Using CLASSIC_SV_FIT"
 process.SVllCand = cms.EDProducer("ClassicSVfitInterface",
-                                  srcPairs   = cms.InputTag("barellCand"),
-                                  srcSig     = cms.InputTag("METSignificance", "METSignificance"),
-                                  srcCov     = cms.InputTag("METSignificance", "METCovariance"),
-                                  usePairMET = cms.bool(USEPAIRMET),
-                                  srcMET     = srcMETTag,
-                                  computeForUpDownTES = cms.bool(COMPUTEUPDOWNSVFIT if IsMC else False),
-                                  computeForUpDownMET = cms.bool(COMPUTEMETUPDOWNSVFIT if IsMC else False),
-                                  METdxUP    = cms.InputTag("ShiftMETforTES", "METdxUP"),
-                                  METdyUP    = cms.InputTag("ShiftMETforTES", "METdyUP"),
-                                  METdxDOWN  = cms.InputTag("ShiftMETforTES", "METdxDOWN"),
-                                  METdyDOWN  = cms.InputTag("ShiftMETforTES", "METdyDOWN"),
-                                  METdxUP_EES   = cms.InputTag("ShiftMETforEES", "METdxUPEES"),
-                                  METdyUP_EES   = cms.InputTag("ShiftMETforEES", "METdyUPEES"),
-                                  METdxDOWN_EES = cms.InputTag("ShiftMETforEES", "METdxDOWNEES"),
-                                  METdyDOWN_EES = cms.InputTag("ShiftMETforEES", "METdyDOWNEES")
+        srcPairs   = cms.InputTag("barellCand"),
+        srcSig     = cms.InputTag("METSignificance", "METSignificance"),
+        srcCov     = cms.InputTag("METSignificance", "METCovariance"),
+        usePairMET = cms.bool(USEPAIRMET),
+        srcMET     = srcMETTag,
+        computeForUpDownTES = cms.bool(COMPUTEUPDOWNSVFIT if IsMC else False),
+        computeForUpDownMET = cms.bool(COMPUTEMETUPDOWNSVFIT if IsMC else False),
+        METdxUP    = cms.InputTag("ShiftMETforTES", "METdxUP"),
+        METdyUP    = cms.InputTag("ShiftMETforTES", "METdyUP"),
+        METdxDOWN  = cms.InputTag("ShiftMETforTES", "METdxDOWN"),
+        METdyDOWN  = cms.InputTag("ShiftMETforTES", "METdyDOWN"),
+        METdxUP_EES   = cms.InputTag("ShiftMETforEES", "METdxUPEES"),
+        METdyUP_EES   = cms.InputTag("ShiftMETforEES", "METdyUPEES"),
+        METdxDOWN_EES = cms.InputTag("ShiftMETforEES", "METdxDOWNEES"),
+        METdyDOWN_EES = cms.InputTag("ShiftMETforEES", "METdyDOWNEES")
 )
-#else:
-#    print "Using STANDALONE_SV_FIT"
-#    process.SVllCand = cms.EDProducer("SVfitInterface",
-#                                      srcPairs   = cms.InputTag("barellCand"),
-#                                      srcSig     = cms.InputTag("METSignificance", "METSignificance"),
-#                                      srcCov     = cms.InputTag("METSignificance", "METCovariance"),
-#                                      usePairMET = cms.bool(USEPAIRMET),
-#                                      srcMET     = srcMETTag,
-#                                      computeForUpDownTES = cms.bool(COMPUTEUPDOWNSVFIT if IsMC else False)
-#    )
 
 ## ----------------------------------------------------------------------
 ## SV fit BYPASS (skip SVfit, don't compute SVfit pair mass)
 ## ----------------------------------------------------------------------
 process.SVbypass = cms.EDProducer ("SVfitBypass",
-                                    srcPairs   = cms.InputTag("barellCand"),
-                                    usePairMET = cms.bool(USEPAIRMET),
-                                    srcMET     = srcMETTag,
-                                    srcSig     = cms.InputTag("METSignificance", "METSignificance"),
-                                    srcCov     = cms.InputTag("METSignificance", "METCovariance"),
-                                    METdxUP    = cms.InputTag("ShiftMETforTES", "METdxUP"),
-                                    METdyUP    = cms.InputTag("ShiftMETforTES", "METdyUP"),
-                                    METdxDOWN  = cms.InputTag("ShiftMETforTES", "METdxDOWN"),
-                                    METdyDOWN  = cms.InputTag("ShiftMETforTES", "METdyDOWN"),
-                                    METdxUP_EES   = cms.InputTag("ShiftMETforEES", "METdxUPEES"),
-                                    METdyUP_EES   = cms.InputTag("ShiftMETforEES", "METdyUPEES"),
-                                    METdxDOWN_EES = cms.InputTag("ShiftMETforEES", "METdxDOWNEES"),
-                                    METdyDOWN_EES = cms.InputTag("ShiftMETforEES", "METdyDOWNEES")
+    srcPairs   = cms.InputTag("barellCand"),
+    usePairMET = cms.bool(USEPAIRMET),
+    srcMET     = srcMETTag,
+    srcSig     = cms.InputTag("METSignificance", "METSignificance"),
+    srcCov     = cms.InputTag("METSignificance", "METCovariance"),
+    METdxUP    = cms.InputTag("ShiftMETforTES", "METdxUP"),
+    METdyUP    = cms.InputTag("ShiftMETforTES", "METdyUP"),
+    METdxDOWN  = cms.InputTag("ShiftMETforTES", "METdxDOWN"),
+    METdyDOWN  = cms.InputTag("ShiftMETforTES", "METdyDOWN"),
+    METdxUP_EES   = cms.InputTag("ShiftMETforEES", "METdxUPEES"),
+    METdyUP_EES   = cms.InputTag("ShiftMETforEES", "METdyUPEES"),
+    METdxDOWN_EES = cms.InputTag("ShiftMETforEES", "METdxDOWNEES"),
+    METdyDOWN_EES = cms.InputTag("ShiftMETforEES", "METdyDOWNEES")
 )
-
 
     
 ## ----------------------------------------------------------------------
 ## Ntuplizer
 ## ----------------------------------------------------------------------
 process.HTauTauTree = cms.EDAnalyzer("HTauTauNtuplizer",
-                      fileName = cms.untracked.string ("CosaACaso"),
-                      applyFSR = cms.bool(APPLYFSR),
-                      IsMC = cms.bool(IsMC),
-                      year = cms.int32(YEAR),
-                      period = cms.string(PERIOD),
-                      doCPVariables = cms.bool(doCPVariables),               
-                      vtxCollection = cms.InputTag("offlineSlimmedPrimaryVertices"),
-                      secVtxCollection = cms.InputTag("slimmedSecondaryVertices"), # FRA
-                      puCollection = cms.InputTag("slimmedAddPileupInfo"),
-                      rhoCollection = cms.InputTag("fixedGridRhoFastjetAll"),
-                      rhoMiniRelIsoCollection = cms.InputTag("fixedGridRhoFastjetAll"),
-                      rhoForJER = cms.InputTag("fixedGridRhoAll"), # FRA
-                      PFCandCollection = cms.InputTag("packedPFCandidates"),
-                      jetCollection = cms.InputTag("jetsUpdated"),                    
-                      JECset = cms.untracked.string(""),   # specified later
-                      computeQGVar = cms.bool(COMPUTEQGVAR),
-                      QGLLabel = cms.string("QGTagger"),
-                      pileupJetIDLabel = cms.string("pileupJetIdUpdated"),
-                      stage2TauCollection = cms.InputTag("caloStage2Digis","Tau"),
-                      stage2JetCollection = cms.InputTag("caloStage2Digis","Jet"),
-                      ak8jetCollection = cms.InputTag("slimmedJetsAK8"),
-                      lepCollection = cms.InputTag("softLeptons"),
-                      lheCollection = cms.InputTag("LHEEventProduct"),
-                      genCollection = cms.InputTag("generator"),
-                      genericCollection = cms.InputTag("genInfo"),
-                      genjetCollection = cms.InputTag("slimmedGenJets"),
-                      totCollection = cms.InputTag("nEventsTotal"),
-                      passCollection = cms.InputTag("nEventsPassTrigger"),
-                      lhepCollection = cms.InputTag("externalLHEProducer"),
-                      triggerResultsLabel = cms.InputTag("TriggerResults", "", HLTProcessName), #Different names for MiniAODv2 at https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD.                                        #triggerSet = cms.InputTag("selectedPatTrigger"), # FRA
-                      triggerSet = cms.InputTag("slimmedPatTrigger"),    # FRA
-                      triggerList = HLTLIST,
-                      metFilters = cms.InputTag ("TriggerResults","",METfiltersProcess),
-                      PUPPImetCollection = cms.InputTag("slimmedMETsPuppi"),
-                      metPuppiShiftedCollection = cms.InputTag("ShiftPuppiMETcentral"),
-                      srcPuppiMETCov = cms.InputTag("PuppiMETSignificance", "METCovariance"),
-                      srcPuppiMETSignificance = cms.InputTag("PuppiMETSignificance", "METSignificance"),                      
-                      srcPFMETCov = cms.InputTag("METSignificance", "METCovariance"),
-                      srcPFMETSignificance = cms.InputTag("METSignificance", "METSignificance"),
-                      metERCollection = uncorrPFMetTag, # save the uncorrected MET (for TES and EES central shifts) just for reference
-                      HT = cms.InputTag("externalLHEProducer"),
-                      beamSpot = cms.InputTag("offlineBeamSpot"),
-                      genLumiHeaderTag = cms.InputTag("generator"),
-                      L1prefireProb     = cms.InputTag("prefiringweight:nonPrefiringProb"),
-                      L1prefireProbUp   = cms.InputTag("prefiringweight:nonPrefiringProbUp"),
-                      L1prefireProbDown = cms.InputTag("prefiringweight:nonPrefiringProbDown")
+        fileName = cms.untracked.string ("CosaACaso"),
+        applyFSR = cms.bool(APPLYFSR),
+        IsMC = cms.bool(IsMC),
+        year = cms.int32(YEAR),
+        period = cms.string(PERIOD),
+        doCPVariables = cms.bool(doCPVariables),               
+        vtxCollection = cms.InputTag("offlineSlimmedPrimaryVertices"),
+        secVtxCollection = cms.InputTag("slimmedSecondaryVertices"), # FRA
+        puCollection = cms.InputTag("slimmedAddPileupInfo"),
+        rhoCollection = cms.InputTag("fixedGridRhoFastjetAll"),
+        rhoMiniRelIsoCollection = cms.InputTag("fixedGridRhoFastjetAll"),
+        rhoForJER = cms.InputTag("fixedGridRhoAll"), # FRA
+        PFCandCollection = cms.InputTag("packedPFCandidates"),
+        jetCollection = cms.InputTag("jetsUpdated"),                    
+        JECset = cms.untracked.string(""),   # specified later
+        computeQGVar = cms.bool(COMPUTEQGVAR),
+        computeBjetReg = cms.bool(RUNBJETREG),
+        QGLLabel = cms.string("QGTagger"),
+        BJetRegLabel = cms.string("bjetRegressionNN"),
+        pileupJetIDLabel = cms.string("pileupJetIdUpdated"),
+        stage2TauCollection = cms.InputTag("caloStage2Digis","Tau"),
+        stage2JetCollection = cms.InputTag("caloStage2Digis","Jet"),
+        ak8jetCollection = cms.InputTag("slimmedJetsAK8"),
+        lepCollection = cms.InputTag("softLeptons"),
+        lheCollection = cms.InputTag("LHEEventProduct"),
+        genCollection = cms.InputTag("generator"),
+        genericCollection = cms.InputTag("genInfo"),
+        genjetCollection = cms.InputTag("slimmedGenJets"),
+        totCollection = cms.InputTag("nEventsTotal"),
+        passCollection = cms.InputTag("nEventsPassTrigger"),
+        lhepCollection = cms.InputTag("externalLHEProducer"),
+        triggerResultsLabel = cms.InputTag("TriggerResults", "", HLTProcessName), 
+        triggerSet = cms.InputTag("slimmedPatTrigger"),    # FRA
+        triggerList = HLTLIST,
+        metFilters = cms.InputTag ("TriggerResults","",METfiltersProcess),
+        PUPPImetCollection = cms.InputTag("slimmedMETsPuppi"),
+        metPuppiShiftedCollection = cms.InputTag("ShiftPuppiMETcentral"),
+        srcPuppiMETCov = cms.InputTag("PuppiMETSignificance", "METCovariance"),
+        srcPuppiMETSignificance = cms.InputTag("PuppiMETSignificance", "METSignificance"),                      
+        srcPFMETCov = cms.InputTag("METSignificance", "METCovariance"),
+        srcPFMETSignificance = cms.InputTag("METSignificance", "METSignificance"),
+        metERCollection = uncorrPFMetTag, # save the uncorrected MET (for TES and EES central shifts) just for reference
+        HT = cms.InputTag("externalLHEProducer"),
+        beamSpot = cms.InputTag("offlineBeamSpot"),
+        genLumiHeaderTag = cms.InputTag("generator"),
+        L1prefireProb   = cms.InputTag("prefiringweight:nonPrefiringProb"),
+        L1prefireProbUp = cms.InputTag("prefiringweight:nonPrefiringProbUp"),
+        L1prefireProbDown = cms.InputTag("prefiringweight:nonPrefiringProbDown")
 )
+
 if USE_NOHFMET:
     process.HTauTauTree.metCollection = cms.InputTag("slimmedMETsNoHF")
 else:
@@ -820,8 +892,8 @@ if RUNPNET:
     process.ParticleNetTauAK4JetTags = boostedJetONNXJetTagsProducer.clone();
     process.ParticleNetTauAK4JetTags.src = cms.InputTag("ParticleNetTauAK4JetTagInfos");
     process.ParticleNetTauAK4JetTags.flav_names = cms.vstring(pnetAK4Discriminators);
-    process.ParticleNetTauAK4JetTags.preprocess_json = cms.string('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK4/CHS/PNETUL/ClassRegLostTracks/preprocess.json');
-    process.ParticleNetTauAK4JetTags.model_path = cms.FileInPath('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK4/CHS/PNETUL/ClassRegLostTracks/particle-net.onnx');
+    process.ParticleNetTauAK4JetTags.preprocess_json = cms.string('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK4/CHS/PNETUL/ClassReg/preprocess.json');
+    process.ParticleNetTauAK4JetTags.model_path = cms.FileInPath('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK4/CHS/PNETUL/ClassReg/particle-net.onnx');
     process.ParticleNetTauAK4JetTags.debugMode = cms.untracked.bool(False)
 
     process.ParticleNetTauAK8JetTags = boostedJetONNXJetTagsProducer.clone();
@@ -844,12 +916,37 @@ if RUNPNET:
     )
     for s in pnetAK4Discriminators:
         process.jetsAK4PNETUpdated.discriminatorSources.append("ParticleNetTauAK4JetTags:"+s)
-
+    
+    if RUNBJETREG:
+        process.jetsAK4PNETUpdated.userData.userFloats.src += [
+            "bjetRegressionNN:corr",
+            "bjetRegressionNN:res"
+            ]
+                
     process.HTauTauTree.pnetAK4DiscriminatorLabels = cms.vstring("ParticleNetTauAK4JetTags:"+s for s in pnetAK4Discriminators);
     process.HTauTauTree.pnetAK8DiscriminatorLabels = cms.vstring("ParticleNetTauAK8JetTags:"+s for s in pnetAK8Discriminators);    
     process.HTauTauTree.jetCollection = cms.InputTag("jetsAK4PNETUpdated")
     process.HTauTauTree.ak8jetCollection = cms.InputTag("jetsAK8PNETUpdated")
 
+    process.jetSequence += process.ParticleNetTauAK4JetTagInfos
+    process.jetSequence += process.ParticleNetTauAK8JetTagInfos
+    process.jetSequence += process.ParticleNetTauAK4JetTags
+    process.jetSequence += process.ParticleNetTauAK8JetTags
+    process.jetSequence += process.jetsAK8PNETUpdated
+    process.jetSequence += process.jetsAK4PNETUpdated
+
+elif RUNBJETREG:
+        process.jetsAK4BJetRegUpdated = updatedPatJets.clone(
+            jetSource = "jetsUpdated",
+            addJetCorrFactors = False
+        )
+        process.jetsAK4BJetRegUpdated.userData.userFloats.src += [
+            "bjetRegressionNN:corr",
+            "bjetRegressionNN:res"
+        ]
+        
+        process.HTauTauTree.jetCollection = cms.InputTag("jetsAK4BJetRegUpdated")
+        process.jetSequence += process.jetsAK4BJetRegUpdated;
 
 #print particles gen level - DEBUG purposes
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
@@ -867,7 +964,6 @@ process.l1ECALPref  = cms.Path(process.prefiringweight)
 
 # Prepare lepton collections
 process.Candidates = cms.Sequence(
-    # process.printTree         + # just for debug, print MC particles
     process.nEventsTotal       +
     #process.hltFilter         + 
     process.nEventsPassTrigger +
@@ -885,16 +981,6 @@ process.Candidates = cms.Sequence(
     process.geninfo            +
     process.SVFit
     )
-# always run ntuplizer
-
-## add PNET jets to the path sequence
-if RUNPNET:
-    process.Candidates += process.ParticleNetTauAK4JetTagInfos
-    process.Candidates += process.ParticleNetTauAK8JetTagInfos
-    process.Candidates += process.ParticleNetTauAK4JetTags
-    process.Candidates += process.ParticleNetTauAK8JetTags
-    process.Candidates += process.jetsAK8PNETUpdated
-    process.Candidates += process.jetsAK4PNETUpdated
 
 process.trees = cms.EndPath(process.HTauTauTree)
 
