@@ -838,11 +838,11 @@ process.HTauTauTree = cms.EDAnalyzer("HTauTauNtuplizer",
         genLumiHeaderTag = cms.InputTag("generator"),
         L1prefireProb   = cms.InputTag("prefiringweight:nonPrefiringProb"),
         L1prefireProbUp = cms.InputTag("prefiringweight:nonPrefiringProbUp"),
-        L1prefireProbDown = cms.InputTag("prefiringweight:nonPrefiringProbDown")
+        L1prefireProbDown = cms.InputTag("prefiringweight:nonPrefiringProbDown"),
         DeepMETResponseTuneCollection = cms.InputTag("DeepMETRawDeepResponseTune"),
         DeepMETResolutionTuneCollection = cms.InputTag("DeepMETRawDeepResolutionTune"),
         ShiftedDeepMETResponseTuneCollection = cms.InputTag("ShiftDeepMETcentralRawDeepResponseTune"),
-        ShiftedDeepMETResolutionTuneCollection = cms.InputTag("ShiftDeepMETcentralRawDeepResolutionTune"),
+        ShiftedDeepMETResolutionTuneCollection = cms.InputTag("ShiftDeepMETcentralRawDeepResolutionTune")
 )
 
 if USE_NOHFMET:
