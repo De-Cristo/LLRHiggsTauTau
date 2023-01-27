@@ -12,7 +12,7 @@ TRIGGERLIST=[]
 # channel: kemu=0, ketau=1,kmutau=2,ktautau=3
 HLTLIST = cms.VPSet(
 
-### === Single muon triggers   -- UPDATED FOR 2018 DATA
+### === Single muon triggers with isolation -- UPDATED FOR 2018 DATA
     cms.PSet (
         HLT = cms.string("HLT_IsoMu24_v"),
         path1 = cms.vstring ("hltL3crIsoL1sSingleMu22L1f0L2f10QL3f24QL3trkIsoFiltered0p07"),
@@ -31,7 +31,7 @@ HLTLIST = cms.VPSet(
         leg1 = cms.int32(13),
         leg2 = cms.int32(999)
         ),
-### === Single electron triggers   -- UPDATED FOR 2018 DATA
+### === Single electron triggers with isolation  -- UPDATED FOR 2018 DATA
     cms.PSet (
         HLT = cms.string("HLT_Ele32_WPTight_Gsf_v"),
         path1 = cms.vstring ("hltEle32WPTightGsfTrackIsoFilter"),
@@ -51,7 +51,7 @@ HLTLIST = cms.VPSet(
         leg2 = cms.int32(999)
         ),
 
-### === Single tauh triggers 
+### === Single tauh triggers with isolation
     cms.PSet (
         HLT = cms.string("HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_v"),
         path1 = cms.vstring ("hltSelectedPFTau180MediumChargedIsolationL1HLTMatched"),
@@ -224,7 +224,6 @@ HLTLIST = cms.VPSet(
         ),
 	
 ## === Additional triggers - Valeria study 04/02/2022 (https://indico.cern.ch/event/1124716/contributions/4721294/attachments/2384605/4075311/HH_bbTauTau_DAmante_04Feb.pdf)
-
     cms.PSet (
         HLT = cms.string("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v"),
         path1 = cms.vstring ("",""),
@@ -563,7 +562,62 @@ HLTLIST = cms.VPSet(
         leg1 = cms.int32(999),
         leg2 = cms.int32(999)
         ),
-     )
+    ### added by Raffaele as a test for boosted non-resonant HHbbtautau 27/01/2023
+    cms.PSet (
+        HLT = cms.string("HLT_AK8PFHT800_TrimMass50_v"),
+        path1 = cms.vstring ("",""),
+        path2 = cms.vstring (""),
+        path3 = cms.vstring (""),
+        path4 = cms.vstring (""),
+        leg1 = cms.int32(999),
+        leg2 = cms.int32(999)
+        ),
+    cms.PSet (
+        HLT = cms.string("HLT_AK8PFJet500_v"),
+        path1 = cms.vstring ("",""),
+        path2 = cms.vstring (""),
+        path3 = cms.vstring (""),
+        path4 = cms.vstring (""),
+        leg1 = cms.int32(999),
+        leg2 = cms.int32(999)
+        ),
+    cms.PSet (
+        HLT = cms.string("HLT_PFHT1050_v"),
+        path1 = cms.vstring ("",""),
+        path2 = cms.vstring (""),
+        path3 = cms.vstring (""),
+        path4 = cms.vstring (""),
+        leg1 = cms.int32(999),
+        leg2 = cms.int32(999)
+        ),
+    cms.PSet (
+        HLT = cms.string("HLT_PFHT500_PFMET100_PFMHT100_IDTight_v"),
+        path1 = cms.vstring ("",""),
+        path2 = cms.vstring (""),
+        path3 = cms.vstring (""),
+        path4 = cms.vstring (""),
+        leg1 = cms.int32(999),
+        leg2 = cms.int32(999)
+        ),
+    cms.PSet (
+        HLT = cms.string("HLT_Ele115_CaloIdVT_GsfTrkIdT_v"),
+        path1 = cms.vstring ("",""),
+        path2 = cms.vstring (""),
+        path3 = cms.vstring (""),
+        path4 = cms.vstring (""),
+        leg1 = cms.int32(999),
+        leg2 = cms.int32(999)
+        ),
+    cms.PSet (
+        HLT = cms.string("HLT_Ele135_CaloIdVT_GsfTrkIdT_v"),
+        path1 = cms.vstring ("",""),
+        path2 = cms.vstring (""),
+        path3 = cms.vstring (""),
+        path4 = cms.vstring (""),
+        leg1 = cms.int32(999),
+        leg2 = cms.int32(999)
+        ),
+    )
 
 
 #now I create the trigger list for HLTconfig
