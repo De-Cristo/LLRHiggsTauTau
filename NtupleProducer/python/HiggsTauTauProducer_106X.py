@@ -875,7 +875,6 @@ if RUNPNET:
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
-        pf_candidates = cms.InputTag("packedPFCandidates"),
         jets = cms.InputTag("jetsUpdated"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.4),
@@ -887,7 +886,8 @@ if RUNPNET:
         max_dr_for_losttrack = cms.double(0.2),
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
-        dump_feature_tree = cms.bool(False)
+        use_puppiP4 = cms.bool(False),                                                                                                                                                            
+        puppi_weights = cms.InputTag("")                                                                                                                                                  
     )
 
     process.ParticleNetTauAK8JetTagInfos = ParticleNetFeatureEvaluator.clone(
@@ -897,7 +897,6 @@ if RUNPNET:
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
-        pf_candidates = cms.InputTag("packedPFCandidates"),
         jets = cms.InputTag("slimmedJetsAK8"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.8),
@@ -909,12 +908,13 @@ if RUNPNET:
         max_dr_for_losttrack = cms.double(0.2),
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
-        dump_feature_tree = cms.bool(False)
+        use_puppiP4 = cms.bool(False),                                                                                                                                                            
+        puppi_weights = cms.InputTag("")                                                                                                                                                  
     )
     
     from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
 
-    pnetAK4Discriminators.extend(['probmu','probele','probtaup1h0p','probtaup1h1p','probtaup1h2p','probtaup3h0p','probtaup3h1p','probtaum1h0p','probtaum1h1p','probtaum1h2p','probtaum3h0p','probtaum3h1p','probb','probc','probuds','probg','ptcorr','ptreshigh','ptreslow']);
+    pnetAK4Discriminators.extend(['probmu','probele','probtaup1h0p','probtaup1h1p','probtaup1h2p','probtaup3h0p','probtaup3h1p','probtaum1h0p','probtaum1h1p','probtaum1h2p','probtaum3h0p','probtaum3h1p','probb','probc','probuds','probg','ptcorr','ptreshigh','ptreslow','ptnu']);
     pnetAK8Discriminators.extend(['probHtt','probHtm','probHte','probHbb','probHcc','probHqq','probHgg','probQCD2hf','probQCD1hf','probQCD0hf','masscorr']);
 
     process.ParticleNetTauAK4JetTags = boostedJetONNXJetTagsProducer.clone();
