@@ -993,7 +993,7 @@ process.l1ECALPref  = cms.Path(process.prefiringweight)
 # Prepare lepton collections
 process.Candidates = cms.Sequence(
     process.nEventsTotal       +
-    #process.hltFilter         + 
+    #process.hltFilter          + 
     process.nEventsPassTrigger +
     process.egammaPostRecoSeq  +
     process.muons              +
@@ -1008,7 +1008,18 @@ process.Candidates = cms.Sequence(
     process.METSequence        +
     process.geninfo            +
     process.SVFit
+)
+
+#### GEN trees only for MC
+if IsMC:
+    process.gentree = cms.EDAnalyzer("WeightsTreeMaker",
+            lheInfo = cms.InputTag("externalLHEProducer"),
+            genInfo = cms.InputTag("generator"),
+            pileupInfo = cms.InputTag("slimmedAddPileupInfo"),
     )
+    
+    process.Candidates.replace(process.nEventsTotal,process.nEventsTotal+process.gentree)
+
 
 process.trees = cms.EndPath(process.HTauTauTree)
 
