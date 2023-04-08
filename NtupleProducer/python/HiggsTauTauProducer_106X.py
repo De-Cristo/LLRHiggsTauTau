@@ -107,7 +107,7 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool( True ),
-    #SkipEvent = cms.untracked.vstring('ProductNotFound')
+    # SkipEvent = cms.untracked.vstring('ProductNotFound')
 )
 
 process.maxEvents = cms.untracked.PSet(
@@ -148,12 +148,12 @@ if YEAR==2018: prefireEraMuon = "20172018"
 
 from PhysicsTools.PatUtils.l1PrefiringWeightProducer_cfi import l1PrefiringWeightProducer
 process.prefiringweight = l1PrefiringWeightProducer.clone(
-TheJets = cms.InputTag("updatedPatJetsUpdatedJEC"), 
-DataEraECAL = cms.string(prefireEraECAL), 
-DataEraMuon = cms.string(prefireEraMuon), 
-UseJetEMPt = cms.bool(False),
-PrefiringRateSystematicUnctyECAL = cms.double(0.2),
-PrefiringRateSystematicUnctyMuon = cms.double(0.2)
+    TheJets = cms.InputTag("updatedPatJetsUpdatedJEC"), 
+    DataEraECAL = cms.string(prefireEraECAL), 
+    DataEraMuon = cms.string(prefireEraMuon), 
+    UseJetEMPt = cms.bool(False),
+    PrefiringRateSystematicUnctyECAL = cms.double(0.2),
+    PrefiringRateSystematicUnctyMuon = cms.double(0.2)
 )
 
 # Trigger Unpacker Module
@@ -438,6 +438,23 @@ process.jets = selectedPatJets.clone(
     src = cms.InputTag("selectedUpdatedPatJetsUpdatedJEC"),
     cut = cms.string(JETCUT)
 )
+
+# process.selectedJetsAK8 = selectedPatJets.clone(
+#     src = cms.InputTag("slimmedJetsAK8"),
+#     cut = cms.string("pt > 200 && abs(eta) < 2.5")
+# )
+
+process.selectedJetsAK8 = selectedPatJets.clone()
+process.selectedJetsAK8.src = cms.InputTag("slimmedJetsAK8")
+process.selectedJetsAK8.cut = cms.string("pt > 200 && abs(eta) < 2.5")
+
+process.filterSlimmedJetsAK8 = cms.EDFilter("PATCandViewCountFilter",
+        src = cms.InputTag("selectedJetsAK8"),
+        minNumber = cms.uint32(1),
+        maxNumber = cms.uint32(99)
+)
+
+process.SlimmedAFilteredJetsAK8 =  cms.Sequence(process.selectedJetsAK8+ process.filterSlimmedJetsAK8)
 
 ##
 ## QG tagging for jets
@@ -875,6 +892,7 @@ if RUNPNET:
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
+        pf_candidates = cms.InputTag("packedPFCandidates"),
         jets = cms.InputTag("jetsUpdated"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.4),
@@ -887,7 +905,8 @@ if RUNPNET:
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
-        puppi_weights = cms.InputTag("")                                                                                                                                                  
+        puppi_weights = cms.InputTag("")
+        dump_feature_tree = cms.bool(False)
     )
 
     process.ParticleNetTauAK8JetTagInfos = ParticleNetFeatureEvaluator.clone(
@@ -897,6 +916,7 @@ if RUNPNET:
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
+        pf_candidates = cms.InputTag("packedPFCandidates"),
         jets = cms.InputTag("slimmedJetsAK8"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.8),
@@ -909,7 +929,8 @@ if RUNPNET:
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
-        puppi_weights = cms.InputTag("")                                                                                                                                                  
+        puppi_weights = cms.InputTag("")
+        dump_feature_tree = cms.bool(False)
     )
     
     from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
@@ -1005,6 +1026,7 @@ process.Candidates = cms.Sequence(
     process.barellCand         +
     process.jecSequence        + 
     process.jetSequence        +
+    process.SlimmedAFilteredJetsAK8       +
     process.METSequence        +
     process.geninfo            +
     process.SVFit

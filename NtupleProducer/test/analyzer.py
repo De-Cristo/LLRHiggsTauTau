@@ -73,7 +73,8 @@ RUNPNET=True
 RUNBJEREG=True
 JPTPNETAK4=15
 JETAPNETAK4=2.5
-JPTPNETAK8=180
+# JPTPNETAK8=180
+JPTPNETAK8=200
 
 HLTProcessName='HLT' #Different names possible, check e.g. at https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD.
 if not IsMC:
@@ -148,8 +149,8 @@ example_files = {
     # (2018, True): "/store/mc/RunIIAutumn18MiniAOD/VBFHHTo2B2Tau_CV_1_C2V_1_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/250000/F22484D3-E820-F040-8E63-0864695D025B.root",
 
     # ultra-legacy test files
-    (2016, True): "/store/mc/RunIISummer20UL16MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_v17-v1/2540000/127921F5-CAC9-AB4B-8C99-62981DB57E45.root",
-    (2017, True): "/store/mc/RunIISummer20UL17MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v2/120000/05668F8F-6DE3-3649-B228-9D7620F7C279.root",
+    # (2016, True): "/store/mc/RunIISummer20UL16MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_v17-v1/2540000/127921F5-CAC9-AB4B-8C99-62981DB57E45.root",
+    # (2017, True): "/store/mc/RunIISummer20UL17MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v2/120000/05668F8F-6DE3-3649-B228-9D7620F7C279.root",
     (2018, True): "/store/mc/RunIISummer20UL18MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/120000/001C8DDF-599C-5E45-BF2C-76F887C9ADE9.root",
 }
 
