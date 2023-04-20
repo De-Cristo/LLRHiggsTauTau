@@ -444,9 +444,9 @@ git cms-addpkg RecoJets/JetProducers
 git clone https://github.com/CMS-HTT/RecoilCorrections.git  HTT-utilities/RecoilCorrections
 
 # LLRHiggsTauTau framework
-git clone git@github.com:LLRCMS/LLRHiggsTauTau.git
+git clone git@github.com:De-Cristo/LLRHiggsTauTau.git
 cd LLRHiggsTauTau
-git checkout 106X_HH_UL
+git checkout 106X_VBFHSS_UL
 cd -
 
 git clone -n https://github.com/latinos/UserCode-sixie-Muon-MuonAnalysisTools Muon/MuonAnalysisTools
