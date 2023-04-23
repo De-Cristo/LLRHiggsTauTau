@@ -905,7 +905,7 @@ if RUNPNET:
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
-        puppi_weights = cms.InputTag("")
+        puppi_weights = cms.InputTag(""),
         dump_feature_tree = cms.bool(False)
     )
 
@@ -929,7 +929,7 @@ if RUNPNET:
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
-        puppi_weights = cms.InputTag("")
+        puppi_weights = cms.InputTag(""),
         dump_feature_tree = cms.bool(False)
     )
     
