@@ -84,6 +84,7 @@ if IsMC:
     process.GlobalTag.globaltag = '106X_mc2017_realistic_v10'             # 2017 MC
   if YEAR == 2018:
     process.GlobalTag.globaltag = '106X_upgrade2018_realistic_v16_L1v1'  # 2018 MC
+    # process.GlobalTag.globaltag = '106X_upgrade2018_realistic_v11_L1v1'  # 2018 MC
 else :
     process.GlobalTag.globaltag = '106X_dataRun2_v35'                    # Data
 
@@ -192,7 +193,7 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 process.goodPrimaryVertices = cms.EDFilter("VertexSelector",
   src = cms.InputTag("offlineSlimmedPrimaryVertices"),
   cut = cms.string(PVERTEXCUT),
-  filter = cms.bool(False), # if True, rejects events . if False, produce emtpy vtx collection
+  filter = cms.bool(True), # if True, rejects events . if False, produce emtpy vtx collection
 )
 
 process.bareSoftMuons = cms.EDFilter("PATMuonRefSelector",
@@ -210,6 +211,8 @@ process.softMuons = cms.EDProducer("MuFiller",
     cut = cms.string(""),
     flags = cms.PSet(
         ID = cms.string("userFloat('isPFMuon')" ), # PF ID
+        # ID = cms.string("userFloat('isGlobalMuon')" ), # PF ID
+        # ID = cms.string("userFloat('isTrackerMuon')" ), # PF ID
         isGood = cms.string(MUCUT)
     )
 )
@@ -450,7 +453,7 @@ process.selectedJetsAK8.cut = cms.string("pt > 200 && abs(eta) < 2.5")
 
 process.filterSlimmedJetsAK8 = cms.EDFilter("PATCandViewCountFilter",
         src = cms.InputTag("selectedJetsAK8"),
-        minNumber = cms.uint32(1),
+        minNumber = cms.uint32(0),
         maxNumber = cms.uint32(99)
 )
 
@@ -892,7 +895,7 @@ if RUNPNET:
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
-        pf_candidates = cms.InputTag("packedPFCandidates"),
+        # pf_candidates = cms.InputTag("packedPFCandidates"),
         jets = cms.InputTag("jetsUpdated"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.4),
@@ -905,8 +908,13 @@ if RUNPNET:
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
+<<<<<<< HEAD
+        puppi_weights = cms.InputTag("")
+        # dump_feature_tree = cms.bool(False)
+=======
         puppi_weights = cms.InputTag(""),
         dump_feature_tree = cms.bool(False)
+>>>>>>> 4741e993a8529eba0b2fa455b9d336c70936d9d0
     )
 
     process.ParticleNetTauAK8JetTagInfos = ParticleNetFeatureEvaluator.clone(
@@ -916,7 +924,7 @@ if RUNPNET:
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
-        pf_candidates = cms.InputTag("packedPFCandidates"),
+        # pf_candidates = cms.InputTag("packedPFCandidates"),
         jets = cms.InputTag("slimmedJetsAK8"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.8),
@@ -929,8 +937,13 @@ if RUNPNET:
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
+<<<<<<< HEAD
+        puppi_weights = cms.InputTag("")
+        # dump_feature_tree = cms.bool(False)
+=======
         puppi_weights = cms.InputTag(""),
         dump_feature_tree = cms.bool(False)
+>>>>>>> 4741e993a8529eba0b2fa455b9d336c70936d9d0
     )
     
     from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
@@ -1019,7 +1032,7 @@ process.Candidates = cms.Sequence(
     process.egammaPostRecoSeq  +
     process.muons              +
     process.electrons          + 
-    process.cleanSoftElectrons +
+    # process.cleanSoftElectrons +
     process.taus               +
     process.fsrSequence        +
     process.softLeptons        + 

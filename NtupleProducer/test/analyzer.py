@@ -11,7 +11,7 @@ options = VarParsing("python")
 
 # set defaults of common options
 # options.setDefault("inputFiles", "")  # currently, a list is used to toggle the input for testing
-options.setDefault("outputFile", "HTauTauAnalysis.root")
+options.setDefault("outputFile", "VBFHSSAnalysis_LLP_sp.root")
 options.setDefault("maxEvents", -1)
 
 # register new options
@@ -48,7 +48,9 @@ APPLYMUCORR=False
 APPLYELECORR=True
 APPLYFSR=False #this is by far the slowest module (not counting SVFit so far)
 #Cuts on the Objects (add more cuts with &&)
-#MUCUT="(isGlobalMuon || (isTrackerMuon && numberOfMatches>0)) && abs(eta)<2.4 && pt>8"
+# MUCUT="(isGlobalMuon || (isTrackerMuon && numberOfMatches>0)) && abs(eta)<2.4 && pt>8"
+# MUCUT="((isGlobalMuon || (isTrackerMuon && numberOfMatches>0) || isPFMuon ) && abs(eta)<2.4 && pt>8 )"
+MUCUT="((isGlobalMuon) && abs(eta)<2.4 && pt>8 )"
 #ELECUT="abs(eta)<2.5 && gsfTrack.trackerExpectedHitsInner.numberOfHits<=1 && pt>10"
 #TAUCUT="pt>15"
 #JETCUT="pt>15"
@@ -84,7 +86,7 @@ print "HLTProcessName: ",HLTProcessName
 #relaxed sets for testing purposes
 TAUDISCRIMINATOR="byIsolationMVA3oldDMwoLTraw"
 PVERTEXCUT="!isFake && ndof > 4 && abs(z) <= 24 && position.Rho <= 2" #cut on good primary vertexes
-MUCUT="isLooseMuon && pt>10"#"isLooseMuon && pt>5"
+# MUCUT="isLooseMuon && pt>10"#"isLooseMuon && pt>5"
 ELECUT="pt>10"#"pt>7"#"gsfTracsk.hitPattern().numberOfHits(HitPattern::MISSING_INNER_HITS)<=1 && pt>10"
 TAUCUT="pt>15"#"tauID('byCombinedIsolationDeltaBetaCorrRaw3Hits') < 1000.0 && pt>18" #miniAOD tau from hpsPFTauProducer have pt>18 and decaymodefinding ID
 JETCUT="pt>0" # was 10, is now 0 to save all the jets and be able to copute JEC MET in KLUB
@@ -149,9 +151,10 @@ example_files = {
     # (2018, True): "/store/mc/RunIIAutumn18MiniAOD/VBFHHTo2B2Tau_CV_1_C2V_1_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/250000/F22484D3-E820-F040-8E63-0864695D025B.root",
 
     # ultra-legacy test files
-    # (2016, True): "/store/mc/RunIISummer20UL16MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_v17-v1/2540000/127921F5-CAC9-AB4B-8C99-62981DB57E45.root",
-    # (2017, True): "/store/mc/RunIISummer20UL17MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v2/120000/05668F8F-6DE3-3649-B228-9D7620F7C279.root",
-    (2018, True): "/store/mc/RunIISummer20UL18MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/120000/001C8DDF-599C-5E45-BF2C-76F887C9ADE9.root",
+    (2018, True): "/store/mc/RunIISummer19UL18MiniAODv2/HTo2LongLivedTo2mu2jets_MH-125_MFF-20_CTau-130mm_TuneCP5_13TeV_pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/00000/0BCBCE29-D410-5246-86FF-DA579D45E7AD.root",
+    # (2018, True): "/store/mc/RunIISummer20UL18MiniAODv2/DYJetsToLL_0J_TuneCP5_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/00000/BB54FE8D-B895-2C4B-8927-1AD9A54A409B.root",
+
+    
 }
 
 # get an example file when no input file is set

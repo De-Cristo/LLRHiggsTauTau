@@ -8,3 +8,4 @@
 *.log
 JobLauncher*/
 jobs_crab3_*
+.ipynb_checkpoints/

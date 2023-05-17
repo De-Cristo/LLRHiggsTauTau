@@ -67,6 +67,8 @@ class triggerhelper {
   //static const int nMETs =9; //FRA: Fall17 94X
   //static const int nMETs =8; //Chia update Jan19: Fall17 94X
   static const int nMETs = 9; //Davide: ok for 2016, 2017 and 2018 data
+  // static const int nMETs = 8; //LICHENG: test in LLP sample 2018
+    
   string metlist[nMETs];
 
 };

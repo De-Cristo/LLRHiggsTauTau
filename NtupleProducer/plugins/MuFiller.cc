@@ -31,7 +31,7 @@
 #include <LLRHiggsTauTau/NtupleProducer/interface/CutSet.h>
 #include <LLRHiggsTauTau/NtupleProducer/interface/LeptonIsoHelper.h>
 //#include <ZZAnalysis/AnalysisStep/interface/SIPCalculator.h>
-
+#include "TLorentzVector.h"
 
 #include <vector>
 #include <string>
@@ -116,7 +116,17 @@ MuFiller::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   for (unsigned int i = 0; i< muonHandle->size(); ++i){
     //---Clone the pat::Muon
     pat::Muon l(*((*muonHandle)[i].get()));
-
+    
+    float Pt = -999.;
+    float Eta = -999.;
+    float Phi = -999.;
+    float Mass = -999.;
+      
+    Pt = l.pt();
+    Eta = l.eta();
+    Phi = l.phi();
+    Mass = l.mass();
+        
     //--- PF ISO
     float PFChargedHadIso   = l.chargedHadronIso();
     float PFNeutralHadIso   = l.neutralHadronIso();
@@ -177,6 +187,14 @@ MuFiller::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     l.addUserFloat("dxy_innerTrack",dxy_innerTrack);
     l.addUserFloat("dz_innerTrack",dz_innerTrack);
     l.addUserFloat("rel_error_trackpt",rel_error_trackpt);
+      
+    float ltest = 1.;
+    l.addUserFloat("ltest",ltest);
+      
+    l.addUserFloat("mu_Pt", Pt);
+    l.addUserFloat("mu_Eta", Eta);
+    l.addUserFloat("mu_Phi", Phi);
+    l.addUserFloat("mu_Mass", Mass);
 
 
     //l.addUserFloat("HLTMatch", HLTMatch);

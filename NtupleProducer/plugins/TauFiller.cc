@@ -701,6 +701,24 @@ TauFiller::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     l.addUserInt("numParticlesIsoCone",numParticlesIsoCone);
     l.addUserFloat("leadChargedParticlePt",leadChargedParticlePt);
     l.addUserFloat("trackRefPt",trackRefPt); 
+      
+    float ltest = 2.;
+    l.addUserFloat("ltest",ltest);
+      
+    float Pt = -999.;
+    float Eta = -999.;
+    float Phi = -999.;
+    float Mass = -999.;
+      
+    Pt = l.pt();
+    Eta = l.eta();
+    Phi = l.phi();
+    Mass = l.mass();
+      
+    l.addUserFloat("mu_Pt", Pt);
+    l.addUserFloat("mu_Eta", Eta);
+    l.addUserFloat("mu_Phi", Phi);
+    l.addUserFloat("mu_Mass", Mass);
 
     // fill all userfloats
     for (unsigned int iuf = 0; iuf < tauFloatDiscrims_.size(); iuf++)

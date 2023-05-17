@@ -43,6 +43,8 @@ class GenFiller : public edm::EDProducer {
   bool IsInteresting (const GenParticle& p);
   int makeFlagVector (const GenParticle* p); // put all gen flags in a single int word
   bool isVBFParton(const GenParticle& p);
+  bool isVBFQuark(const GenParticle& p);
+  bool isVHV(const GenParticle& p);
 
   //edm::InputTag src_;
   edm::EDGetTokenT<edm::View<reco::GenParticle> > src_;
@@ -349,7 +351,9 @@ int GenFiller::makeFlagVector (const GenParticle* p)
     if (fl.isFirstCopy())               flags |= (1 << 12);
     if (fl.isLastCopy())                flags |= (1 << 13);
     if (fl.isLastCopyBeforeFSR())       flags |= (1 << 14);
-    if (isVBFParton(*p))                 flags |= (1 << 15);   
+    if (isVBFParton(*p))                flags |= (1 << 15);   
+    if (isVBFQuark(*p))                 flags |= (1 << 16);   
+    if (isVHV(*p))                      flags |= (1 << 17);
     return flags;
 }
 
@@ -373,6 +377,53 @@ bool GenFiller::isVBFParton(const GenParticle& p)
 	}
     }
   return FoundHiggs ;
+}
+
+bool GenFiller::isVBFQuark(const GenParticle& p)
+{
+    int APdgId = abs(p.pdgId());
+    bool IsVBFQuarkPdgId = ( APdgId == 1 || APdgId == 2 || APdgId == 3 || APdgId == 4 || APdgId == 5);// only quarks and no t
+    bool FoundVHiggs = false;
+    if(IsVBFQuarkPdgId){
+        for(unsigned int iMother = 0 ; iMother < p.numberOfMothers() ; ++iMother){
+            const reco::Candidate* Mother = p.mother(iMother);
+            for(unsigned int iDaughter = 0 ; iDaughter < Mother->numberOfDaughters() ; ++iDaughter){
+                const reco::Candidate* Daughter = Mother->daughter(iDaughter);
+                if( Daughter->pdgId()==23 || abs(Daughter->pdgId())==24 ){
+                    for (unsigned int VDau = 0 ; VDau < Daughter->numberOfDaughters() ; ++VDau){
+                        const reco::Candidate* VDaughter = Daughter->daughter(VDau);
+                        if(VDaughter->pdgId()==25) FoundVHiggs = true ;
+                        if(FoundVHiggs) break;
+                    }
+                }
+                if(FoundVHiggs) break;
+            }
+            if(FoundVHiggs) break;
+        }
+    }
+    return FoundVHiggs;
+}
+
+
+bool GenFiller::isVHV(const GenParticle& p)
+{
+    int APdgId = abs(p.pdgId());
+    bool IsVHVPdgId = ( APdgId == 23 || APdgId == 24 );// only Z/W
+    bool FoundVHiggs = false;
+    if(IsVHVPdgId){
+        for(unsigned int iMother = 0 ; iMother < p.numberOfMothers() ; ++iMother){
+            const reco::Candidate* Mother = p.mother(iMother);
+            if ( APdgId == abs(Mother->pdgId()) ){
+                for (unsigned int VDau = 0 ; VDau < Mother->numberOfDaughters() ; ++VDau){
+                    const reco::Candidate* VDaughter = Mother->daughter(VDau);
+                    if(VDaughter->pdgId()==25) FoundVHiggs = true ;
+                    if(FoundVHiggs) break;
+                }
+            }
+            if(FoundVHiggs) break;
+        }
+    }
+    return FoundVHiggs;
 }
 
 

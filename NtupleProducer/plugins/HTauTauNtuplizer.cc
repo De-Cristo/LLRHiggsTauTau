@@ -513,6 +513,13 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _dz;
   std::vector<Float_t> _dxy_innerTrack;
   std::vector<Float_t> _dz_innerTrack;
+  std::vector<Float_t> _mu_Pt;
+  std::vector<Float_t> _mu_Eta;
+  std::vector<Float_t> _mu_Phi;
+  std::vector<Float_t> _mu_Mass;
+    
+  std::vector<Float_t> _ltest;
+    
   std::vector<Float_t> _daughters_rel_error_trackpt;
   std::vector<Float_t> _SIP;
   //std::vector<bool> _daughters_iseleBDT; //isBDT for ele //FRA January2019
@@ -1177,6 +1184,13 @@ void HTauTauNtuplizer::Initialize(){
   _dz.clear();
   _dxy_innerTrack.clear();
   _dz_innerTrack.clear();
+  _mu_Pt.clear();  
+  _mu_Eta.clear();
+  _mu_Phi.clear();
+  _mu_Mass.clear();
+    
+  _ltest.clear();
+  
   _daughters_rel_error_trackpt.clear();
   _SIP.clear();
   _decayType.clear();
@@ -1602,10 +1616,17 @@ void HTauTauNtuplizer::beginJob(){
   //myTree->Branch("discriminator",&_discriminator);
   myTree->Branch("daughters_muonID",&_daughters_muonID);
   myTree->Branch("daughters_typeOfMuon",&_daughters_typeOfMuon);
-  myTree->Branch("dxy",&_dxy);
-  myTree->Branch("dz",&_dz);
-  myTree->Branch("dxy_innerTrack",&_dxy_innerTrack);
-  myTree->Branch("dz_innerTrack",&_dz_innerTrack);
+  myTree->Branch("Mu_dxy",&_dxy);
+  myTree->Branch("Mu_dz",&_dz);
+  myTree->Branch("Mu_dxy_innerTrack",&_dxy_innerTrack);
+  myTree->Branch("Mu_dz_innerTrack",&_dz_innerTrack);
+  myTree->Branch("Mu_Pt",&_mu_Pt);
+  myTree->Branch("Mu_Eta",&_mu_Eta);
+  myTree->Branch("Mu_Phi",&_mu_Phi);
+  myTree->Branch("Mu_Mass",&_mu_Mass);
+    
+  myTree->Branch("ltest",&_ltest);
+    
   myTree->Branch("daughters_rel_error_trackpt",&_daughters_rel_error_trackpt);
   myTree->Branch("SIP",&_SIP);
   //myTree->Branch("daughters_iseleBDT",&_daughters_iseleBDT); //FRA January2019
@@ -1823,6 +1844,8 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("pvGen_x", &_pvGen_x);
   myTree->Branch("pvGen_y", &_pvGen_y);
   myTree->Branch("pvGen_z", &_pvGen_z);
+    
+    cout << "BEGINJOB END" << endl;
 
 }
 
@@ -2357,6 +2380,7 @@ void HTauTauNtuplizer::analyze(const edm::Event& event, const edm::EventSetup& e
     //iMot++;
   }
   myTree->Fill();
+  cout << "ANALYSE END" << endl;
   //return;
 }
 
@@ -2959,6 +2983,14 @@ void HTauTauNtuplizer::FillSoftLeptons(const edm::View<reco::Candidate> *daus,
     _combreliso03.push_back( userdatahelpers::hasUserFloat(cand,"combRelIsoPF03") ? userdatahelpers::getUserFloat(cand,"combRelIsoPF03") : -1 );
     _dxy.push_back(userdatahelpers::getUserFloat(cand,"dxy"));
     _dz.push_back(userdatahelpers::getUserFloat(cand,"dz"));
+      
+    _ltest.push_back(userdatahelpers::getUserFloat(cand,"ltest"));
+      
+    _mu_Pt.push_back(userdatahelpers::getUserFloat(cand,"mu_Pt"));
+    _mu_Eta.push_back(userdatahelpers::getUserFloat(cand,"mu_Eta"));
+    _mu_Phi.push_back(userdatahelpers::getUserFloat(cand,"mu_Phi"));
+    _mu_Mass.push_back(userdatahelpers::getUserFloat(cand,"mu_Mass"));
+        
     //_SIP.push_back(userdatahelpers::getUserFloat(cand,"SIP"));
     //int type = -1; 
     //if( userdatahelpers::hasUserInt(cand,"isTESShifted") ) type = ParticleType::TAU;
@@ -3769,7 +3801,7 @@ void HTauTauNtuplizer::endJob(){
     for(int i=1;i<=ntauIds;i++){
     hTauIDs->GetXaxis()->SetBinLabel(i,tauIDStrings[i-1].Data());
   }
-
+  cout<< "ENDJOB END" << endl;
 }
 
 
@@ -3872,6 +3904,7 @@ void HTauTauNtuplizer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSe
     } 
   }
   
+  cout << "BEGINRUN END" << endl;
 }
 
 
@@ -3891,6 +3924,9 @@ void HTauTauNtuplizer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, e
       _susyModel = model;
     }
   }
+
+  cout << "ENDRUN END" << endl;
+
 }
 void HTauTauNtuplizer::endLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& iSetup)
 {

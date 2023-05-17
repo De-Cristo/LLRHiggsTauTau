@@ -228,6 +228,24 @@ EleFiller::EleFiller(const edm::ParameterSet& iConfig) :
     l.addUserFloat("energyScaleDown",energyScaleDown);
     l.addUserFloat("energySigmaUp",energySigmaUp);
     l.addUserFloat("energySigmaDown",energySigmaDown); 
+      
+    float ltest = 0.;
+    l.addUserFloat("ltest",ltest);
+      
+    float Pt = -999.;
+    float Eta = -999.;
+    float Phi = -999.;
+    float Mass = -999.;
+      
+    Pt = l.pt();
+    Eta = l.eta();
+    Phi = l.phi();
+    Mass = l.mass();
+      
+    l.addUserFloat("mu_Pt", Pt);
+    l.addUserFloat("mu_Eta", Eta);
+    l.addUserFloat("mu_Phi", Phi);
+    l.addUserFloat("mu_Mass", Mass);
    
     //--- MC info
     const reco::GenParticle* genL= l.genParticleRef().get();
