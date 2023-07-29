@@ -48,9 +48,6 @@ except NameError:
 try: RUNPNET
 except NameError:
     RUNPNET=True
-try: RUNBJETREG
-except NameError:
-    RUNBJETREG=True
     
 ### ----------------------------------------------------------------------
 ### Trigger list
@@ -416,10 +413,37 @@ else:
     jecLevels = [ 'L1FastJet', 'L2Relative', 'L3Absolute', 'L2L3Residual' ]
 
 
+## B-regression
+# following https://twiki.cern.ch/twiki/bin/viewauth/CMS/HiggsWG/BJetRegression#How_to_treat_the_training
+# Y value from json files (could be read directly from there, but this is for another time)
+MODEL_DIR = "LLRHiggsTauTau/NtupleProducer/data/DNNmodels/"
+if YEAR == 2018: # just one option for weight file
+    Y_MEAN = 1.0545977354049683
+    Y_STD  = 0.27912887930870056
+    WEIGHT_FILE = "breg_training_2018_JECv8.pb"
+elif YEAR == 2017: # Weight file to be checked
+    Y_MEAN = 1.055067777633667
+    Y_STD  = 0.28225210309028625
+    WEIGHT_FILE = "breg_training_2017_jecV32.pb"
+elif YEAR == 2016: # weight file marked as recommended
+    Y_MEAN = 1.047176718711853
+    Y_STD  = 0.31976690888404846
+    WEIGHT_FILE = "breg_training_2016_JECv11_Oct_2019.pb"
+
+process.bregJets = cms.EDProducer("bRegressionProducer",
+                                  JetTag = cms.InputTag("slimmedJets"),
+                                  rhoFixedGridCollection = cms.InputTag("fixedGridRhoAll"),
+                                  bRegressionWeightfile = cms.FileInPath(MODEL_DIR+WEIGHT_FILE),
+                                  pvsrc = cms.InputTag('offlineSlimmedPrimaryVertices'),
+                                  svsrc = cms.InputTag('slimmedSecondaryVertices'),
+                                  y_mean = cms.double(Y_MEAN),
+                                  y_std = cms.double(Y_STD),
+)
+
 # Update jet collection
 updateJetCollection(
    process,
-   jetSource = cms.InputTag('slimmedJets'),
+   jetSource = cms.InputTag('bregJets'),
    pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
    svSource = cms.InputTag('slimmedSecondaryVertices'),
    jetCorrections = ('AK4PFchs', cms.vstring(jecLevels), 'None'),
@@ -438,6 +462,7 @@ process.jets = selectedPatJets.clone(
     src = cms.InputTag("selectedUpdatedPatJetsUpdatedJEC"),
     cut = cms.string(JETCUT)
 )
+
 
 ##
 ## QG tagging for jets
@@ -504,87 +529,7 @@ process.jetsUpdated.userData.userInts.src += ["pileupJetIdUpdated:fullId"]
 if COMPUTEQGVAR:
     process.jetsUpdated.userData.userFloats.src += ["QGTagger:qgLikelihood"]
 
-if RUNBJETREG:
-
-    process.bJetVars = cms.EDProducer("JetRegressionVarProducer",
-            pvsrc = cms.InputTag("offlineSlimmedPrimaryVertices"),
-            src   = cms.InputTag("jets"),
-            svsrc = cms.InputTag("slimmedSecondaryVertices"),
-            gpsrc = cms.InputTag("prunedGenParticles")
-    )
-
-    process.jetsUpdated.userData.userFloats.src += [
-        "bJetVars:leadTrackPt",
-        "bJetVars:leptonPtRelv0",
-        "bJetVars:leptonPtRelInvv0",
-        "bJetVars:leptonDeltaR",
-        "bJetVars:vtxPt",
-        "bJetVars:vtxMass",
-        "bJetVars:vtx3dL",
-        "bJetVars:vtx3deL",
-        "bJetVars:ptD"
-    ]
-    process.jetsUpdated.userData.userInts.src += [
-        "bJetVars:vtxNtrk",
-        "bJetVars:leptonPdgId"
-    ]
-
-    process.bjetRegressionNN = cms.EDProducer("BJetEnergyRegressionMVA",
-        backend = cms.string("TF"),
-        src = cms.InputTag("jetsUpdated"),
-        pvsrc = cms.InputTag("offlineSlimmedPrimaryVertices"),
-        svsrc = cms.InputTag("slimmedSecondaryVertices"),
-        rhosrc = cms.InputTag("fixedGridRhoFastjetAll"),
-        weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2018.pb"),
-        name = cms.string("JetRegNN"),
-        isClassifier = cms.bool(False),
-        variablesOrder = cms.vstring([
-            "Jet_pt","Jet_eta","rho","Jet_mt","Jet_leadTrackPt","Jet_leptonPtRel","Jet_leptonDeltaR","Jet_neHEF",
-            "Jet_neEmEF","Jet_vtxPt","Jet_vtxMass","Jet_vtx3dL","Jet_vtxNtrk","Jet_vtx3deL",
-            "Jet_numDaughters_pt03","Jet_energyRing_dR0_em_Jet_rawEnergy","Jet_energyRing_dR1_em_Jet_rawEnergy",
-            "Jet_energyRing_dR2_em_Jet_rawEnergy","Jet_energyRing_dR3_em_Jet_rawEnergy","Jet_energyRing_dR4_em_Jet_rawEnergy",
-            "Jet_energyRing_dR0_neut_Jet_rawEnergy","Jet_energyRing_dR1_neut_Jet_rawEnergy","Jet_energyRing_dR2_neut_Jet_rawEnergy",
-            "Jet_energyRing_dR3_neut_Jet_rawEnergy","Jet_energyRing_dR4_neut_Jet_rawEnergy","Jet_energyRing_dR0_ch_Jet_rawEnergy",
-            "Jet_energyRing_dR1_ch_Jet_rawEnergy","Jet_energyRing_dR2_ch_Jet_rawEnergy","Jet_energyRing_dR3_ch_Jet_rawEnergy",
-            "Jet_energyRing_dR4_ch_Jet_rawEnergy","Jet_energyRing_dR0_mu_Jet_rawEnergy","Jet_energyRing_dR1_mu_Jet_rawEnergy",
-            "Jet_energyRing_dR2_mu_Jet_rawEnergy","Jet_energyRing_dR3_mu_Jet_rawEnergy","Jet_energyRing_dR4_mu_Jet_rawEnergy",
-            "Jet_chHEF","Jet_chEmEF","Jet_leptonPtRelInv","isEle","isMu","isOther","Jet_mass","Jet_ptd"
-        ]),
-        variables = cms.PSet(
-           Jet_pt = cms.string("pt*jecFactor('Uncorrected')"),
-           Jet_mt = cms.string("mt*jecFactor('Uncorrected')"),
-           Jet_eta = cms.string("eta"),
-           Jet_mass = cms.string("mass*jecFactor('Uncorrected')"),
-           Jet_ptd = cms.string("userFloat('bJetVars:ptD')"),
-           Jet_leadTrackPt = cms.string("userFloat('bJetVars:leadTrackPt')"),
-           Jet_vtxNtrk = cms.string("userInt('bJetVars:vtxNtrk')"),
-           Jet_vtxMass = cms.string("userFloat('bJetVars:vtxMass')"),
-           Jet_vtx3dL = cms.string("userFloat('bJetVars:vtx3dL')"),
-           Jet_vtx3deL = cms.string("userFloat('bJetVars:vtx3deL')"),
-           Jet_vtxPt = cms.string("userFloat('bJetVars:vtxPt')"),
-           Jet_leptonPtRel = cms.string("userFloat('bJetVars:leptonPtRelv0')"),
-           Jet_leptonPtRelInv = cms.string("userFloat('bJetVars:leptonPtRelInvv0')*jecFactor('Uncorrected')"),
-           Jet_leptonDeltaR = cms.string("userFloat('bJetVars:leptonDeltaR')"),
-           Jet_neHEF = cms.string("neutralHadronEnergyFraction()"),
-           Jet_neEmEF = cms.string("neutralEmEnergyFraction()"),
-           Jet_chHEF = cms.string("chargedHadronEnergyFraction()"),
-           Jet_chEmEF = cms.string("chargedEmEnergyFraction()"),
-           isMu = cms.string("?abs(userInt('bJetVars:leptonPdgId'))==13?1:0"),
-           isEle = cms.string("?abs(userInt('bJetVars:leptonPdgId'))==11?1:0"),
-           isOther = cms.string("?userInt('bJetVars:leptonPdgId')==0?1:0"),
-        ),
-        inputTensorName = cms.string("ffwd_inp:0"),
-        outputTensorName = cms.string("ffwd_out/BiasAdd:0"),
-        outputNames = cms.vstring(["corr","res"]),
-        outputFormulas = cms.vstring(["at(0)*0.27912887930870056+1.0545977354049683","0.5*(at(2)-at(1))*0.27912887930870056"])
-        )
-
-    process.jetSequence += process.bJetVars
-    process.jetSequence += process.jetsUpdated
-    process.jetSequence += process.bjetRegressionNN
-
-else:                                        
-    process.jetSequence += process.jetsUpdated
+process.jetSequence += process.jetsUpdated
 
 
 ##
@@ -807,9 +752,7 @@ process.HTauTauTree = cms.EDAnalyzer("HTauTauNtuplizer",
         jetCollection = cms.InputTag("jetsUpdated"),                    
         JECset = cms.untracked.string(""),   # specified later
         computeQGVar = cms.bool(COMPUTEQGVAR),
-        computeBjetReg = cms.bool(RUNBJETREG),
         QGLLabel = cms.string("QGTagger"),
-        BJetRegLabel = cms.string("bjetRegressionNN"),
         pileupJetIDLabel = cms.string("pileupJetIdUpdated"),
         stage2TauCollection = cms.InputTag("caloStage2Digis","Tau"),
         stage2JetCollection = cms.InputTag("caloStage2Digis","Jet"),
@@ -970,12 +913,6 @@ if RUNPNET:
     for s in pnetAK4Discriminators:
         process.jetsAK4PNETUpdated.discriminatorSources.append("ParticleNetTauAK4JetTags:"+s)
     
-    if RUNBJETREG:
-        process.jetsAK4PNETUpdated.userData.userFloats.src += [
-            "bjetRegressionNN:corr",
-            "bjetRegressionNN:res"
-            ]
-                
     process.HTauTauTree.pnetAK4DiscriminatorLabels = cms.vstring("ParticleNetTauAK4JetTags:"+s for s in pnetAK4Discriminators);
     process.HTauTauTree.pnetAK8DiscriminatorLabels = cms.vstring("ParticleNetTauAK8JetTags:"+s for s in pnetAK8Discriminators);    
     process.HTauTauTree.jetCollection = cms.InputTag("jetsAK4PNETUpdated")
@@ -990,18 +927,6 @@ if RUNPNET:
     process.jetSequence += process.jetsAK8PNETUpdated
     process.jetSequence += process.jetsAK4PNETUpdated
 
-elif RUNBJETREG:
-        process.jetsAK4BJetRegUpdated = updatedPatJets.clone(
-            jetSource = "jetsUpdated",
-            addJetCorrFactors = False
-        )
-        process.jetsAK4BJetRegUpdated.userData.userFloats.src += [
-            "bjetRegressionNN:corr",
-            "bjetRegressionNN:res"
-        ]
-        
-        process.HTauTauTree.jetCollection = cms.InputTag("jetsAK4BJetRegUpdated")
-        process.jetSequence += process.jetsAK4BJetRegUpdated;
 
 #print particles gen level - DEBUG purposes
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
@@ -1030,6 +955,7 @@ process.Candidates = cms.Sequence(
     process.fsrSequence        +
     process.softLeptons        + 
     process.barellCand         +
+    process.bregJets           +
     process.jecSequence        + 
     process.jetSequence        +
     process.METSequence        +
