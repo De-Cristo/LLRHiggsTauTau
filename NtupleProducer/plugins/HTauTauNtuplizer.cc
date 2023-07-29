@@ -725,7 +725,14 @@ class HTauTauNtuplizer : public edm::EDAnalyzer {
   std::vector<Float_t> _ak8jets_deepDoubleBvLJetTags_probHbb;
   std::vector<Float_t> _ak8jets_deepBoostedJetTags_probHbb;
   std::vector<Float_t> _ak8jets_particleNetJetTags_probHbb;
-  std::vector<Float_t> _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probHcc;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probHqq;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probQCDbb;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probQCDb;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probQCDcc;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probQCDc;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_probQCDothers;
+  std::vector<Float_t> _ak8jets_particleNetJetTags_massreg;
   std::vector<Int_t>   _ak8jets_nsubjets;
 
   // subjets of ak8 -- store ALL subjets, and link them with an idx to the ak8 jet vectors
@@ -1330,8 +1337,16 @@ void HTauTauNtuplizer::Initialize(){
   _ak8jets_deepDoubleBvLJetTags_probHbb.clear();
   _ak8jets_deepBoostedJetTags_probHbb.clear();
   _ak8jets_particleNetJetTags_probHbb.clear();
-  _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD.clear();
+  _ak8jets_particleNetJetTags_probHcc.clear();
+  _ak8jets_particleNetJetTags_probHqq.clear();
+  _ak8jets_particleNetJetTags_probQCDbb.clear();
+  _ak8jets_particleNetJetTags_probQCDb.clear();
+  _ak8jets_particleNetJetTags_probQCDcc.clear();
+  _ak8jets_particleNetJetTags_probQCDc.clear();
+  _ak8jets_particleNetJetTags_probQCDothers.clear();
+  _ak8jets_particleNetJetTags_massreg.clear();
   _ak8jets_nsubjets.clear();
+
   for(auto & imap : _ak8_pnet_score)
     imap.second.clear();
 
@@ -1346,12 +1361,6 @@ void HTauTauNtuplizer::Initialize(){
   _subjets_deepFlavor_probbb.clear();
   _subjets_deepFlavor_problepb.clear();
   _subjets_ak8MotherIdx.clear();
-
-
-  //_genH_px.clear();
-  //_genH_py.clear();
-  //_genH_pz.clear();
-  //_genH_e.clear();
 
   // not a tree var, but has to be filled once per daughter - reset here
   vTrgMatchedToDau_idx.clear();
@@ -1787,7 +1796,14 @@ void HTauTauNtuplizer::beginJob(){
   myTree->Branch("ak8jets_deepDoubleBvLJetTags_probHbb", &_ak8jets_deepDoubleBvLJetTags_probHbb);
   myTree->Branch("ak8jets_deepBoostedJetTags_probHbb", &_ak8jets_deepBoostedJetTags_probHbb);
   myTree->Branch("ak8jets_particleNetJetTags_probHbb", &_ak8jets_particleNetJetTags_probHbb);
-  myTree->Branch("ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD", &_ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD);
+  myTree->Branch("ak8jets_particleNetJetTags_probHcc", &_ak8jets_particleNetJetTags_probHcc);
+  myTree->Branch("ak8jets_particleNetJetTags_probHqq", &_ak8jets_particleNetJetTags_probHqq);
+  myTree->Branch("ak8jets_particleNetJetTags_probQCDbb", &_ak8jets_particleNetJetTags_probQCDbb);
+  myTree->Branch("ak8jets_particleNetJetTags_probQCDb", &_ak8jets_particleNetJetTags_probQCDb);
+  myTree->Branch("ak8jets_particleNetJetTags_probQCDcc", &_ak8jets_particleNetJetTags_probQCDcc);
+  myTree->Branch("ak8jets_particleNetJetTags_probQCDc", &_ak8jets_particleNetJetTags_probQCDc);
+  myTree->Branch("ak8jets_particleNetJetTags_probQCDothers", &_ak8jets_particleNetJetTags_probQCDothers);
+  myTree->Branch("ak8jets_particleNetJetTags_massreg", &_ak8jets_particleNetJetTags_massreg);
   myTree->Branch("ak8jets_nsubjets", &_ak8jets_nsubjets);
 
   for(const auto & label : pnetAK8DiscriminatorLabels){
@@ -2768,8 +2784,16 @@ void HTauTauNtuplizer::FillFatJet(const edm::View<pat::Jet>* fatjets, const edm:
       _ak8jets_massIndependentDeepDoubleBvLJetTags_probHbb.push_back(ijet->bDiscriminator("pfMassIndependentDeepDoubleBvLJetTags:probHbb"));
       _ak8jets_deepDoubleBvLJetTags_probHbb.push_back(ijet->bDiscriminator("pfDeepDoubleBvLJetTags:probHbb"));
       _ak8jets_deepBoostedJetTags_probHbb.push_back(ijet->bDiscriminator("pfDeepBoostedJetTags:probHbb"));
-      _ak8jets_particleNetJetTags_probHbb.push_back(ijet->bDiscriminator("pfParticleNetJetTags:probHbb"));
-      _ak8jets_particleNetDiscriminatorsJetTags_HbbvsQCD.push_back(ijet->bDiscriminator("pfParticleNetDiscriminatorsJetTags:HbbvsQCD"));
+
+      _ak8jets_particleNetJetTags_probHbb.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXbb"));
+      _ak8jets_particleNetJetTags_probHcc.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXcc"));
+      _ak8jets_particleNetJetTags_probHqq.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probXqq"));
+      _ak8jets_particleNetJetTags_probQCDbb.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDbb"));
+      _ak8jets_particleNetJetTags_probQCDb.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDb"));
+      _ak8jets_particleNetJetTags_probQCDcc.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDcc"));
+      _ak8jets_particleNetJetTags_probQCDc.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDc"));
+      _ak8jets_particleNetJetTags_probQCDothers.push_back(ijet->bDiscriminator("pfMassDecorrelatedParticleNetJetTags:probQCDothers"));
+      _ak8jets_particleNetJetTags_massreg.push_back(ijet->bDiscriminator("pfParticleNetMassRegressionJetTags:mass"));
 
       for(auto & ilabel : pnetAK8DiscriminatorLabels)
       _ak8_pnet_score[ilabel].push_back(ijet->bDiscriminator(ilabel)); 

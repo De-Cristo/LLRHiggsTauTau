@@ -891,25 +891,23 @@ if RUNPNET:
     )
 
     process.ParticleNetTauAK8JetTagInfos = ParticleNetFeatureEvaluator.clone(
+        jets = cms.InputTag("slimmedJetsAK8"),
         muons = cms.InputTag("slimmedMuons"),
         electrons = cms.InputTag("slimmedElectrons"),
-        photons = cms.InputTag("slimmedPhotons"),
         taus = cms.InputTag("slimmedTaus"),
         vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
         secondary_vertices = cms.InputTag("slimmedSecondaryVertices"),
-        jets = cms.InputTag("slimmedJetsAK8"),
         losttracks = cms.InputTag("lostTracks"),
         jet_radius = cms.double(0.8),
         min_jet_pt = cms.double(JPTPNETAK8),
+        min_jet_eta = cms.double(0.0),
         max_jet_eta = cms.double(2.5),
         min_pt_for_pfcandidates = cms.double(0.1),
         min_pt_for_track_properties = cms.double(-1),
-        min_pt_for_losttrack = cms.double(1),
-        max_dr_for_losttrack = cms.double(0.2),
         min_pt_for_taus = cms.double(20),
         max_eta_for_taus = cms.double(2.5),
         use_puppiP4 = cms.bool(False),                                                                                                                                                            
-        puppi_weights = cms.InputTag("")                                                                                                                                                  
+        min_puppi_wgt = cms.double(-1)
     )
     
     from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
@@ -931,12 +929,39 @@ if RUNPNET:
     process.ParticleNetTauAK8JetTags.model_path = cms.FileInPath('LLRHiggsTauTau/NtupleProducer/data/ParticleNetAK8/Puppi/PNETUL/ClassReg/particle-net.onnx');
     process.ParticleNetTauAK8JetTags.debugMode = cms.untracked.bool(False)
 
+
+    from RecoBTag.FeatureTools.pfDeepBoostedJetTagInfos_cfi import pfDeepBoostedJetTagInfos
+    process.pfParticleNetAK8JetTagInfos = pfDeepBoostedJetTagInfos.clone(
+        jet_radius = 0.8,
+        min_pt_for_track_properties = 0.95,
+        min_jet_pt = JPTPNETAK8,
+        max_jet_eta = 2.5,
+        use_puppiP4 = False,
+        min_puppi_wgt = -1,
+        vertices = "offlineSlimmedPrimaryVertices",
+        secondary_vertices = "slimmedSecondaryVertices",
+        pf_candidates = "packedPFCandidates",
+        jets = "slimmedJetsAK8",
+        puppi_value_map = "",
+        vertex_associator = ""
+    )
+
+    from RecoBTag.ONNXRuntime.boostedJetONNXJetTagsProducer_cfi import boostedJetONNXJetTagsProducer
+    process.pfParticleNetMassRegressionJetTags = boostedJetONNXJetTagsProducer.clone(
+        src = 'pfParticleNetAK8JetTagInfos',
+        preprocess_json = 'RecoBTag/Combined/data/ParticleNetAK8/MassRegression/V01/preprocess.json',
+        model_path = 'RecoBTag/Combined/data/ParticleNetAK8/MassRegression/V01/particle-net.onnx',
+        flav_names = ["mass"]
+    )
+
     process.jetsAK8PNETUpdated = updatedPatJets.clone(
         jetSource = "slimmedJetsAK8",
         addJetCorrFactors = False
     )
+
     for s in pnetAK8Discriminators:
         process.jetsAK8PNETUpdated.discriminatorSources.append("ParticleNetTauAK8JetTags:"+s)
+    process.jetsAK8PNETUpdated.discriminatorSources.append("pfParticleNetMassRegressionJetTags:mass")
 
     process.jetsAK4PNETUpdated = updatedPatJets.clone(
         jetSource = "jetsUpdated",
@@ -960,6 +985,8 @@ if RUNPNET:
     process.jetSequence += process.ParticleNetTauAK8JetTagInfos
     process.jetSequence += process.ParticleNetTauAK4JetTags
     process.jetSequence += process.ParticleNetTauAK8JetTags
+    process.jetSequence += process.pfParticleNetAK8JetTagInfos
+    process.jetSequence += process.pfParticleNetMassRegressionJetTags
     process.jetSequence += process.jetsAK8PNETUpdated
     process.jetSequence += process.jetsAK4PNETUpdated
 

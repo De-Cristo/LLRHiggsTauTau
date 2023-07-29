@@ -72,6 +72,26 @@ if not options.isMiniAOD:
     process.gentree.genMet     = cms.InputTag("genMetTrue");
     process.gentree.lheEvent   = cms.InputTag("source");
     process.gentree.lheRunInfo = cms.InputTag("source");
+
+    process.gentreePath = cms.Path(
+        process.gentree
+    )
+
+else:
+    process.genPartonFilter = cms.EDFilter("CandViewSelector",
+            src = cms.InputTag("prunedGenParticles"),
+            cut = cms.string("abs(pdgId) == 15 && abs(mother(0).pdgId) == 24")
+    )
+    process.nPartonFilter = cms.EDFilter("PATCandViewCountFilter",
+            src = cms.InputTag("genPartonFilter"),
+            minNumber = cms.uint32(0),
+            maxNumber = cms.uint32(0)
+    )
+
     
-process.gentreePath = cms.Path(process.gentree)
+    process.gentreePath = cms.Path(
+        process.genPartonFilter *
+        process.nPartonFilter *
+        process.gentree
+    )
 

@@ -77,16 +77,21 @@ private:
   std::vector<int>            gid;
   std::vector<int>            gstatus;
 
+  std::vector<TLorentzVector> gens_daugh;
+  std::vector<int>            gid_daugh;
+  std::vector<int>            gstatus_daugh;
+  std::vector<int>            gigen_daugh;
+
+  std::vector<TLorentzVector> gens_moth;
+  std::vector<int>            gid_moth;
+  std::vector<int>            gstatus_moth;
+  std::vector<int>            gigen_moth;
+
   // lhe particles
   std::vector<TLorentzVector> gens_lhe;
   std::vector<TLorentzVector> quark_lhe;
   std::vector<int>            gid_lhe;
   std::vector<int>            gstatus_lhe;
-
-  // gen tau decay products
-  std::vector<TLorentzVector> gentau;
-  std::vector<int>            gtauid;
-  std::vector<int>            gtaustatus;
 
   // gen met
   float genmet, genmetphi;
@@ -190,9 +195,17 @@ void GenTreeMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   gens.clear();
   gid.clear();
   gstatus.clear();
-  gentau.clear();
-  gtauid.clear();
-  gtaustatus.clear();
+
+  gens_daugh.clear();
+  gid_daugh.clear();
+  gstatus_daugh.clear();
+  gigen_daugh.clear();
+
+  gens_moth.clear();
+  gid_moth.clear();
+  gstatus_moth.clear();
+  gigen_moth.clear();
+
   gens_lhe.clear();
   quark_lhe.clear();
   gid_lhe.clear();
@@ -200,45 +213,80 @@ void GenTreeMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   // GEN information
   if (genParticlesH.isValid()) {
+    unsigned int igen = 0;
     for (auto gens_iter = genParticlesH->begin(); gens_iter != genParticlesH->end(); ++gens_iter) {       
-      TLorentzVector g4;
 
-      if((gens_iter->pdgId() == 25 or gens_iter->pdgId() ==  23  or abs(gens_iter->pdgId()) == 24 or abs(gens_iter->pdgId()) == 35 or abs(gens_iter->pdgId()) == 45) 
-	 and gens_iter->numberOfDaughters() > 1){ 
+      TLorentzVector g4;      
+      if((gens_iter->pdgId() == 25 or gens_iter->pdgId() ==  23  or abs(gens_iter->pdgId()) == 24 or abs(gens_iter->pdgId()) == 35 or abs(gens_iter->pdgId()) == 45) and 
+	 gens_iter->isLastCopy() and 
+	 gens_iter->statusFlags().fromHardProcess()){ 
 	g4.SetPtEtaPhiM(gens_iter->pt(), gens_iter->eta(), gens_iter->phi(), gens_iter->mass());
 	gens.push_back(g4);
 	gid.push_back(gens_iter->pdgId());
 	gstatus.push_back(gens_iter->status());
+	for(size_t idau = 0; idau < gens_iter->numberOfDaughters();  idau++){
+	  g4.SetPtEtaPhiM(gens_iter->daughter(idau)->pt(), gens_iter->daughter(idau)->eta(), gens_iter->daughter(idau)->phi(), gens_iter->daughter(idau)->mass());
+	  gens_daugh.push_back(g4);
+	  gid_daugh.push_back(gens_iter->daughter(idau)->pdgId());
+	  gstatus_daugh.push_back(gens_iter->daughter(idau)->status());
+	  gigen_daugh.push_back(igen);
+        }
+        igen++;
       }      
-
-      if (abs(gens_iter->pdgId()) > 10 and abs(gens_iter->pdgId()) < 17 and gens_iter->fromHardProcessFinalState()) { 
+      
+      if (abs(gens_iter->pdgId()) > 10 and abs(gens_iter->pdgId()) < 17 and abs(gens_iter->pdgId()) != 15 and 
+	  (gens_iter->isPromptFinalState() or gens_iter->isDirectPromptTauDecayProductFinalState())) { 
 	g4.SetPtEtaPhiM(gens_iter->pt(), gens_iter->eta(), gens_iter->phi(), gens_iter->mass());
 	gens.push_back(g4);
 	gid.push_back(gens_iter->pdgId());
 	gstatus.push_back(gens_iter->status());
+	for(size_t imot = 0; imot < gens_iter->numberOfMothers(); imot++){
+	  g4.SetPtEtaPhiM(gens_iter->mother(imot)->pt(), gens_iter->mother(imot)->eta(), gens_iter->mother(imot)->phi(), gens_iter->mother(imot)->mass());
+	  gens_moth.push_back(g4);
+	  gid_moth.push_back(gens_iter->mother(imot)->pdgId());
+	  gstatus_moth.push_back(gens_iter->mother(imot)->status());
+	  gigen_moth.push_back(igen);
+	}
+	igen++;
       }      
-
+      
       if (((abs(gens_iter->pdgId()) >= 1 and abs(gens_iter->pdgId()) <= 5) or abs(gens_iter->pdgId()) == 21) and 
 	  (gens_iter->fromHardProcessFinalState() or gens_iter->status() == 23)) { 
 	g4.SetPtEtaPhiM(gens_iter->pt(), gens_iter->eta(), gens_iter->phi(), gens_iter->mass());
 	gens.push_back(g4);
 	gid.push_back(gens_iter->pdgId());
 	gstatus.push_back(gens_iter->status());
+	igen++;
       }      
 
       // look for decayed taus
-      if (abs(gens_iter->pdgId()) == 15 and gens_iter->isPromptDecayed() and gens_iter->numberOfDaughters() > 1){
-	g4.SetPtEtaPhiM(gens_iter->pt(), gens_iter->eta(), gens_iter->phi(), gens_iter->mass());
-	gentau.push_back(g4);
-	gtauid.push_back(gens_iter->pdgId());
-	gtaustatus.push_back(gens_iter->status());
-      }
+      if(abs(gens_iter->pdgId()) == 15 and 
+	 gens_iter->isLastCopy() and
+	 gens_iter->statusFlags().fromHardProcess() and
+	 gens_iter->isPromptDecayed()){ // hadronic taus
 
-      if(gens_iter->isDirectHardProcessTauDecayProductFinalState()){
 	g4.SetPtEtaPhiM(gens_iter->pt(), gens_iter->eta(), gens_iter->phi(), gens_iter->mass());
-	gentau.push_back(g4);
-	gtauid.push_back(gens_iter->pdgId());
-	gtaustatus.push_back(gens_iter->status());
+	gens.push_back(g4);
+	gid.push_back(gens_iter->pdgId());
+	gstatus.push_back(gens_iter->status());
+	for(size_t idau = 0; idau < gens_iter->numberOfDaughters(); idau++){
+	  if(not dynamic_cast<const reco::GenParticle*>(gens_iter->daughter(idau))->statusFlags().isPromptTauDecayProduct()) continue;
+	  g4.SetPtEtaPhiM(gens_iter->daughter(idau)->pt(), gens_iter->daughter(idau)->eta(), gens_iter->daughter(idau)->phi(), gens_iter->daughter(idau)->mass());
+	  gens_daugh.push_back(g4);
+	  gid_daugh.push_back(gens_iter->daughter(idau)->pdgId());
+	  gstatus_daugh.push_back(gens_iter->daughter(idau)->status());
+	  gigen_daugh.push_back(igen);
+	}
+
+	for(size_t imot = 0; imot < gens_iter->numberOfMothers(); imot++){
+	  g4.SetPtEtaPhiM(gens_iter->mother(imot)->pt(), gens_iter->mother(imot)->eta(), gens_iter->mother(imot)->phi(), gens_iter->mother(imot)->mass());
+	  gens_moth.push_back(g4);
+	  gid_moth.push_back(gens_iter->mother(imot)->pdgId());
+	  gstatus_moth.push_back(gens_iter->mother(imot)->status());
+	  gigen_moth.push_back(igen);
+	}
+	igen++;
+
       }
     }
   }
@@ -327,9 +375,15 @@ void GenTreeMaker::beginJob() {
   tree->Branch("gid"    , "std::vector<int>", &gid);
   tree->Branch("gstatus", "std::vector<int>", &gstatus);
 
-  tree->Branch("gentau", "std::vector<TLorentzVector>", &gentau, 32000, 0);
-  tree->Branch("gtauid", "std::vector<int>", &gtauid);
-  tree->Branch("gtaustatus", "std::vector<int>", &gtaustatus);
+  tree->Branch("gens_daugh"   , "std::vector<TLorentzVector>", &gens_daugh, 32000, 0);
+  tree->Branch("gid_daugh"    , "std::vector<int>", &gid_daugh);
+  tree->Branch("gstatus_daugh", "std::vector<int>", &gstatus_daugh);
+  tree->Branch("gigen_daugh", "std::vector<int>", &gigen_daugh);
+
+  tree->Branch("gens_moth"   , "std::vector<TLorentzVector>", &gens_moth, 32000, 0);
+  tree->Branch("gid_moth"    , "std::vector<int>", &gid_moth);
+  tree->Branch("gstatus_moth", "std::vector<int>", &gstatus_moth);
+  tree->Branch("gigen_moth", "std::vector<int>", &gigen_moth);
 
   tree->Branch("gens_lhe"   , "std::vector<TLorentzVector>", &gens_lhe, 32000, 0);
   tree->Branch("quark_lhe"   , "std::vector<TLorentzVector>", &quark_lhe, 32000, 0);

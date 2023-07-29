@@ -69,7 +69,8 @@ private:
   const bool   use_puppiP4_;
   const double min_puppi_wgt_;
   const bool   include_neutrals_;
-  
+  const bool   dump_feature_tree_;
+
   edm::EDGetTokenT<pat::MuonCollection > muon_token_;
   edm::EDGetTokenT<pat::ElectronCollection > electron_token_;
   edm::EDGetTokenT<pat::PhotonCollection > photon_token_;
@@ -197,6 +198,7 @@ ParticleNetFeatureEvaluator::ParticleNetFeatureEvaluator(const edm::ParameterSet
   use_puppiP4_(iConfig.getParameter<bool>("use_puppiP4")),
   min_puppi_wgt_(iConfig.getParameter<double>("min_puppi_wgt")),
   include_neutrals_(iConfig.getParameter<bool>("include_neutrals")),
+  dump_feature_tree_(iConfig.getParameter<bool>("dump_feature_tree")),
   muon_token_(consumes<pat::MuonCollection >(iConfig.getParameter<edm::InputTag>("muons"))),
   electron_token_(consumes<pat::ElectronCollection >(iConfig.getParameter<edm::InputTag>("electrons"))),
   photon_token_(consumes<pat::PhotonCollection >(iConfig.getParameter<edm::InputTag>("photons"))),
@@ -210,6 +212,94 @@ ParticleNetFeatureEvaluator::ParticleNetFeatureEvaluator(const edm::ParameterSet
 
   produces<std::vector<reco::DeepBoostedJetTagInfo>>();
 
+  if(dump_feature_tree_){
+
+    edm::Service<TFileService> fs;
+    tree = fs->make<TTree>("tree","tree");
+
+    tree->Branch("event", &event, "event/i");
+    tree->Branch("jet_pt", &jet_pt, "jet_pt/F");
+    tree->Branch("jet_pt_raw", &jet_pt_raw, "jet_pt_raw/F");
+    tree->Branch("jet_eta", &jet_eta, "jet_eta/F");
+    tree->Branch("jet_phi", &jet_eta, "jet_phi/F");
+    tree->Branch("jet_mass", &jet_eta, "jet_mass/F");
+    tree->Branch("ijet", &ijet, "ijet/i");
+
+    tree->Branch("jet_pfcand_pt_log","std::vector<float>", &jet_pfcand_pt_log);
+    tree->Branch("jet_pfcand_energy_log","std::vector<float>", &jet_pfcand_energy_log);
+    tree->Branch("jet_pfcand_deta","std::vector<float>", &jet_pfcand_deta);
+    tree->Branch("jet_pfcand_dphi","std::vector<float>", &jet_pfcand_dphi);
+    tree->Branch("jet_pfcand_eta","std::vector<float>", &jet_pfcand_eta);
+    tree->Branch("jet_pfcand_charge","std::vector<float>", &jet_pfcand_charge);
+    tree->Branch("jet_pfcand_frompv","std::vector<float>", &jet_pfcand_frompv);
+    tree->Branch("jet_pfcand_dz","std::vector<float>", &jet_pfcand_dz);
+    tree->Branch("jet_pfcand_dzsig","std::vector<float>", &jet_pfcand_dzsig);
+    tree->Branch("jet_pfcand_dxy","std::vector<float>", &jet_pfcand_dxy);
+    tree->Branch("jet_pfcand_dxysig","std::vector<float>", &jet_pfcand_dxysig);
+    tree->Branch("jet_pfcand_nlostinnerhits","std::vector<float>", &jet_pfcand_nlostinnerhits);
+    tree->Branch("jet_pfcand_track_chi2","std::vector<float>", &jet_pfcand_track_chi2);
+    tree->Branch("jet_pfcand_track_qual","std::vector<float>", &jet_pfcand_track_qual);
+    tree->Branch("jet_pfcand_etarel","std::vector<float>", &jet_pfcand_etarel);
+    tree->Branch("jet_pfcand_pperp_ratio","std::vector<float>", &jet_pfcand_pperp_ratio);
+    tree->Branch("jet_pfcand_ppara_ratio","std::vector<float>", &jet_pfcand_ppara_ratio);
+    tree->Branch("jet_pfcand_trackjet_d3d","std::vector<float>", &jet_pfcand_trackjet_d3d);
+    tree->Branch("jet_pfcand_trackjet_d3dsig","std::vector<float>", &jet_pfcand_trackjet_d3dsig);
+    tree->Branch("jet_pfcand_trackjet_dist","std::vector<float>", &jet_pfcand_trackjet_dist);
+    tree->Branch("jet_pfcand_trackjet_decayL","std::vector<float>", &jet_pfcand_trackjet_decayL);
+    tree->Branch("jet_pfcand_npixhits","std::vector<float>", &jet_pfcand_npixhits);
+    tree->Branch("jet_pfcand_nstriphits","std::vector<float>", &jet_pfcand_nstriphits);
+    tree->Branch("jet_pfcand_id","std::vector<float>", &jet_pfcand_id);
+    tree->Branch("jet_pfcand_calofraction","std::vector<float>", &jet_pfcand_calofraction);
+    tree->Branch("jet_pfcand_hcalfraction","std::vector<float>", &jet_pfcand_hcalfraction);
+    tree->Branch("jet_pfcand_muon_id","std::vector<float>", &jet_pfcand_muon_id);
+    tree->Branch("jet_pfcand_muon_isglobal","std::vector<float>", &jet_pfcand_muon_isglobal);
+    tree->Branch("jet_pfcand_muon_chi2","std::vector<float>", &jet_pfcand_muon_chi2);
+    tree->Branch("jet_pfcand_muon_segcomp","std::vector<float>", &jet_pfcand_muon_segcomp);
+    tree->Branch("jet_pfcand_muon_nvalidhit","std::vector<float>", &jet_pfcand_muon_nvalidhit);
+    tree->Branch("jet_pfcand_muon_nstation","std::vector<float>", &jet_pfcand_muon_nstation);
+    tree->Branch("jet_pfcand_electron_detaIn","std::vector<float>", &jet_pfcand_electron_detaIn);
+    tree->Branch("jet_pfcand_electron_dphiIn","std::vector<float>", &jet_pfcand_electron_dphiIn);
+    tree->Branch("jet_pfcand_electron_sigIetaIeta","std::vector<float>", &jet_pfcand_electron_sigIetaIeta);
+    tree->Branch("jet_pfcand_electron_sigIphiIphi","std::vector<float>", &jet_pfcand_electron_sigIphiIphi);
+    tree->Branch("jet_pfcand_electron_r9","std::vector<float>", &jet_pfcand_electron_r9);
+    tree->Branch("jet_pfcand_electron_convProb","std::vector<float>", &jet_pfcand_electron_convProb);
+    tree->Branch("jet_pfcand_photon_sigIetaIeta","std::vector<float>", &jet_pfcand_photon_sigIetaIeta);
+    tree->Branch("jet_pfcand_photon_r9","std::vector<float>", &jet_pfcand_photon_r9);
+    tree->Branch("jet_pfcand_photon_eVeto","std::vector<float>", &jet_pfcand_photon_eVeto);
+    tree->Branch("jet_pfcand_tau_signal","std::vector<float>", &jet_pfcand_tau_signal);
+    tree->Branch("jet_pfcand_puppiw","std::vector<float>", &jet_pfcand_puppiw);
+    
+    tree->Branch("jet_sv_pt_log","std::vector<float>", &jet_sv_pt_log);
+    tree->Branch("jet_sv_mass","std::vector<float>", &jet_sv_mass);
+    tree->Branch("jet_sv_deta","std::vector<float>", &jet_sv_deta);
+    tree->Branch("jet_sv_dphi","std::vector<float>", &jet_sv_dphi);
+    tree->Branch("jet_sv_eta","std::vector<float>", &jet_sv_eta);
+    tree->Branch("jet_sv_ntrack","std::vector<float>", &jet_sv_ntrack);
+    tree->Branch("jet_sv_chi2","std::vector<float>", &jet_sv_chi2);
+    tree->Branch("jet_sv_dxy","std::vector<float>", &jet_sv_dxy);
+    tree->Branch("jet_sv_dxysig","std::vector<float>", &jet_sv_dxysig);
+    tree->Branch("jet_sv_d3d","std::vector<float>", &jet_sv_d3d);
+    tree->Branch("jet_sv_d3dsig","std::vector<float>", &jet_sv_d3dsig);
+
+    tree->Branch("jet_losttrack_pt_log","std::vector<float>", &jet_losttrack_pt_log);
+    tree->Branch("jet_losttrack_eta","std::vector<float>", &jet_losttrack_eta);
+    tree->Branch("jet_losttrack_deta","std::vector<float>", &jet_losttrack_deta);
+    tree->Branch("jet_losttrack_dphi","std::vector<float>", &jet_losttrack_dphi);
+    tree->Branch("jet_losttrack_charge","std::vector<float>", &jet_losttrack_charge);
+    tree->Branch("jet_losttrack_frompv","std::vector<float>", &jet_losttrack_frompv);
+    tree->Branch("jet_losttrack_dz","std::vector<float>", &jet_losttrack_dz);
+    tree->Branch("jet_losttrack_dxy","std::vector<float>", &jet_losttrack_dxy);
+    tree->Branch("jet_losttrack_dzsig","std::vector<float>", &jet_losttrack_dzsig);
+    tree->Branch("jet_losttrack_dxysig","std::vector<float>", &jet_losttrack_dxysig);
+    tree->Branch("jet_losttrack_etarel","std::vector<float>", &jet_losttrack_etarel);
+    tree->Branch("jet_losttrack_npixhits","std::vector<float>", &jet_losttrack_npixhits);
+    tree->Branch("jet_losttrack_nstriphits","std::vector<float>", &jet_losttrack_nstriphits);
+    tree->Branch("jet_losttrack_track_chi2","std::vector<float>", &jet_losttrack_track_chi2);
+    tree->Branch("jet_losttrack_track_qual","std::vector<float>", &jet_losttrack_track_qual);
+    tree->Branch("jet_losttrack_trackjet_d3d","std::vector<float>", &jet_losttrack_trackjet_d3d);
+    tree->Branch("jet_losttrack_trackjet_d3dsig","std::vector<float>", &jet_losttrack_trackjet_d3dsig);
+    tree->Branch("jet_losttrack_trackjet_decayL","std::vector<float>", &jet_losttrack_trackjet_decayL);
+  }
 }
 
 ParticleNetFeatureEvaluator::~ParticleNetFeatureEvaluator() {}
@@ -230,6 +320,7 @@ void ParticleNetFeatureEvaluator::fillDescriptions(edm::ConfigurationDescription
   desc.add<bool>("use_puppiP4", false);
   desc.add<bool>("include_neutrals", true);
   desc.add<double>("min_puppi_wgt", -1.);
+  desc.add<bool>("dump_feature_tree", false);
   desc.add<edm::InputTag>("vertices", edm::InputTag("offlineSlimmedPrimaryVertices"));
   desc.add<edm::InputTag>("secondary_vertices", edm::InputTag("slimmedSecondaryVertices"));
   desc.add<edm::InputTag>("losttracks", edm::InputTag("lostTracks"));
@@ -243,6 +334,16 @@ void ParticleNetFeatureEvaluator::fillDescriptions(edm::ConfigurationDescription
 }
 
 void ParticleNetFeatureEvaluator::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
+
+  if(dump_feature_tree_){
+    event = iEvent.id().event();
+    jet_pt = 0;
+    jet_pt_raw = 0;
+    jet_eta = 0;
+    jet_phi = 0;
+    jet_mass = 0;
+    ijet = 0;
+  }
 
   // output collection
   auto output_tag_infos = std::make_unique<std::vector<reco::DeepBoostedJetTagInfo>>();
@@ -285,9 +386,83 @@ void ParticleNetFeatureEvaluator::produce(edm::Event &iEvent, const edm::EventSe
     }
   }
   
-  
+  // Loop over jet
   for (std::size_t jet_n = 0; jet_n < jets->size(); jet_n++) {
-
+    if(dump_feature_tree_){
+      jet_pfcand_pt_log.clear();
+      jet_pfcand_energy_log.clear();
+      jet_pfcand_deta.clear();
+      jet_pfcand_dphi.clear();
+      jet_pfcand_eta .clear();
+      jet_pfcand_charge.clear();
+      jet_pfcand_frompv.clear();
+      jet_pfcand_nlostinnerhits.clear();
+      jet_pfcand_track_chi2.clear();
+      jet_pfcand_track_qual.clear();
+      jet_pfcand_dz.clear();
+      jet_pfcand_dzsig.clear();
+      jet_pfcand_dxy.clear();
+      jet_pfcand_dxysig.clear();
+      jet_pfcand_etarel.clear();
+      jet_pfcand_pperp_ratio.clear();
+      jet_pfcand_ppara_ratio.clear();
+      jet_pfcand_trackjet_d3d.clear();
+      jet_pfcand_trackjet_d3dsig.clear();
+      jet_pfcand_trackjet_dist.clear();
+      jet_pfcand_npixhits.clear();
+      jet_pfcand_nstriphits.clear();
+      jet_pfcand_trackjet_decayL.clear();
+      jet_pfcand_id.clear();
+      jet_pfcand_puppiw.clear();
+      jet_pfcand_calofraction.clear();
+      jet_pfcand_hcalfraction.clear();
+      jet_pfcand_muon_id.clear();
+      jet_pfcand_muon_isglobal.clear();
+      jet_pfcand_muon_chi2.clear();
+      jet_pfcand_muon_segcomp.clear();
+      jet_pfcand_muon_nvalidhit.clear();
+      jet_pfcand_muon_nstation.clear();
+      jet_pfcand_electron_detaIn.clear();
+      jet_pfcand_electron_dphiIn.clear();
+      jet_pfcand_electron_sigIetaIeta.clear();
+      jet_pfcand_electron_sigIphiIphi.clear();
+      jet_pfcand_electron_r9.clear();
+      jet_pfcand_electron_convProb.clear();
+      jet_pfcand_tau_signal.clear();
+      jet_pfcand_photon_sigIetaIeta.clear();
+      jet_pfcand_photon_r9.clear();
+      jet_pfcand_photon_eVeto.clear();
+      jet_sv_pt_log.clear();
+      jet_sv_mass.clear();
+      jet_sv_deta.clear();
+      jet_sv_dphi.clear();
+      jet_sv_eta.clear();
+      jet_sv_ntrack.clear();
+      jet_sv_chi2.clear();
+      jet_sv_dxy.clear();
+      jet_sv_dxysig.clear();
+      jet_sv_d3d.clear();
+      jet_sv_d3dsig.clear();
+      jet_losttrack_pt_log.clear();
+      jet_losttrack_eta.clear();
+      jet_losttrack_deta.clear();
+      jet_losttrack_dphi.clear();
+      jet_losttrack_charge.clear();
+      jet_losttrack_frompv.clear();
+      jet_losttrack_track_chi2.clear();
+      jet_losttrack_track_qual.clear();
+      jet_losttrack_dz.clear();
+      jet_losttrack_dxy.clear();
+      jet_losttrack_dzsig.clear();
+      jet_losttrack_dxysig.clear();
+      jet_losttrack_etarel.clear();
+      jet_losttrack_trackjet_d3d.clear();
+      jet_losttrack_trackjet_d3dsig.clear();
+      jet_losttrack_trackjet_decayL.clear();
+      jet_losttrack_npixhits.clear();
+      jet_losttrack_nstriphits.clear();  
+    }
+    
     const auto & jet = (*jets)[jet_n];        
     edm::RefToBase<reco::Jet> jet_ref(jets, jet_n);
 
@@ -315,6 +490,18 @@ void ParticleNetFeatureEvaluator::produce(edm::Event &iEvent, const edm::EventSe
       features.check_consistency(particle_features_);
       features.check_consistency(sv_features_);
       features.check_consistency(losttrack_features_);
+    }
+
+    if(dump_feature_tree_ and fill_vars){
+      if(dynamic_cast<const pat::Jet *>(&jet)->genJet()){
+	jet_pt = jet.pt();
+	jet_pt_raw = dynamic_cast<const pat::Jet *>(&jet)->correctedJet("Uncorrected").pt();
+	jet_eta = jet.eta();
+	jet_phi = jet.phi();
+	jet_mass = jet.mass();
+	tree->Fill();
+	ijet++;
+      }
     }
 
     // this should always be done even if features are not filled
@@ -588,6 +775,51 @@ void ParticleNetFeatureEvaluator::fillParticleFeatures(DeepBoostedJetFeatures & 
     else
       fts.fill("jet_pfcand_tau_signal",0);
 
+    if(dump_feature_tree_){
+      jet_pfcand_pt_log.push_back(fts.get("jet_pfcand_pt_log").back());
+      jet_pfcand_energy_log.push_back(fts.get("jet_pfcand_energy_log").back());
+      jet_pfcand_deta.push_back(fts.get("jet_pfcand_deta").back());
+      jet_pfcand_dphi.push_back(fts.get("jet_pfcand_dphi").back());
+      jet_pfcand_eta.push_back(fts.get("jet_pfcand_eta").back());
+      jet_pfcand_charge.push_back(fts.get("jet_pfcand_charge").back());
+      jet_pfcand_frompv.push_back(fts.get("jet_pfcand_frompv").back());
+      jet_pfcand_nlostinnerhits.push_back(fts.get("jet_pfcand_nlostinnerhits").back());
+      jet_pfcand_track_chi2.push_back(fts.get("jet_pfcand_track_chi2").back());
+      jet_pfcand_track_qual.push_back(fts.get("jet_pfcand_track_qual").back());
+      jet_pfcand_dz.push_back(fts.get("jet_pfcand_dz").back());
+      jet_pfcand_dxy.push_back(fts.get("jet_pfcand_dxy").back());
+      jet_pfcand_dxysig.push_back(fts.get("jet_pfcand_dxysig").back());
+      jet_pfcand_dzsig.push_back(fts.get("jet_pfcand_dzsig").back());
+      jet_pfcand_etarel.push_back(fts.get("jet_pfcand_etarel").back());
+      jet_pfcand_pperp_ratio.push_back(fts.get("jet_pfcand_pperp_ratio").back());
+      jet_pfcand_ppara_ratio.push_back(fts.get("jet_pfcand_ppara_ratio").back());
+      jet_pfcand_trackjet_d3d.push_back(fts.get("jet_pfcand_trackjet_d3d").back());
+      jet_pfcand_trackjet_d3dsig.push_back(fts.get("jet_pfcand_trackjet_d3dsig").back());
+      jet_pfcand_trackjet_dist.push_back(fts.get("jet_pfcand_trackjet_dist").back());
+      jet_pfcand_npixhits.push_back(fts.get("jet_pfcand_npixhits").back());
+      jet_pfcand_nstriphits.push_back(fts.get("jet_pfcand_nstriphits").back());
+      jet_pfcand_trackjet_decayL.push_back(fts.get("jet_pfcand_trackjet_decayL").back());
+      jet_pfcand_id.push_back(fts.get("jet_pfcand_id").back());
+      jet_pfcand_puppiw.push_back(fts.get("jet_pfcand_puppiw").back());
+      jet_pfcand_calofraction.push_back(fts.get("jet_pfcand_calofraction").back());
+      jet_pfcand_hcalfraction.push_back(fts.get("jet_pfcand_hcalfraction").back());
+      jet_pfcand_muon_id.push_back(fts.get("jet_pfcand_muon_id").back());
+      jet_pfcand_muon_segcomp.push_back(fts.get("jet_pfcand_muon_segcomp").back());
+      jet_pfcand_muon_isglobal.push_back(fts.get("jet_pfcand_muon_isglobal").back());
+      jet_pfcand_muon_chi2.push_back(fts.get("jet_pfcand_muon_chi2").back());
+      jet_pfcand_muon_nvalidhit.push_back(fts.get("jet_pfcand_muon_nvalidhit").back());
+      jet_pfcand_muon_nstation.push_back(fts.get("jet_pfcand_muon_nstation").back());
+      jet_pfcand_electron_detaIn.push_back(fts.get("jet_pfcand_electron_detaIn").back());
+      jet_pfcand_electron_dphiIn.push_back(fts.get("jet_pfcand_electron_dphiIn").back());
+      jet_pfcand_electron_sigIetaIeta.push_back(fts.get("jet_pfcand_electron_sigIetaIeta").back());
+      jet_pfcand_electron_sigIphiIphi.push_back(fts.get("jet_pfcand_electron_sigIphiIphi").back());
+      jet_pfcand_electron_r9.push_back(fts.get("jet_pfcand_electron_r9").back());
+      jet_pfcand_electron_convProb.push_back(fts.get("jet_pfcand_electron_convProb").back());
+      jet_pfcand_photon_sigIetaIeta.push_back(fts.get("jet_pfcand_photon_sigIetaIeta").back());
+      jet_pfcand_photon_r9.push_back(fts.get("jet_pfcand_photon_r9").back());
+      jet_pfcand_photon_eVeto.push_back(fts.get("jet_pfcand_photon_eVeto").back());
+      jet_pfcand_tau_signal.push_back(fts.get("jet_pfcand_tau_signal").back());
+    }
   }
 }
 
@@ -640,6 +872,19 @@ void ParticleNetFeatureEvaluator::fillSVFeatures(DeepBoostedJetFeatures &fts,
     fts.fill("jet_sv_d3d", std::isnan(val3d.value()) ? 0 : val3d.value());
     fts.fill("jet_sv_d3dsig", std::isnan(fabs(val3d.significance())) ? 0 : fabs(val3d.significance()));
 
+    if(dump_feature_tree_){
+      jet_sv_pt_log.push_back(fts.get("jet_sv_pt_log").back());
+      jet_sv_mass.push_back(fts.get("jet_sv_mass").back());
+      jet_sv_deta.push_back(fts.get("jet_sv_deta").back());
+      jet_sv_dphi.push_back(fts.get("jet_sv_dphi").back());
+      jet_sv_eta.push_back(fts.get("jet_sv_eta").back());
+      jet_sv_ntrack.push_back(fts.get("jet_sv_ntrack").back());
+      jet_sv_chi2.push_back(fts.get("jet_sv_chi2").back());
+      jet_sv_dxy.push_back(fts.get("jet_sv_dxy").back());
+      jet_sv_dxysig.push_back(fts.get("jet_sv_dxysig").back());
+      jet_sv_d3d.push_back(fts.get("jet_sv_d3d").back());
+      jet_sv_d3dsig.push_back(fts.get("jet_sv_d3dsig").back());
+    }
   }
 }
 
@@ -714,6 +959,27 @@ void ParticleNetFeatureEvaluator::fillLostTrackFeatures(DeepBoostedJetFeatures &
 
     fts.fill("lt_mask",1);
     
+    if(dump_feature_tree_){
+      jet_losttrack_pt_log.push_back(fts.get("jet_losttrack_pt_log").back());
+      jet_losttrack_deta.push_back(fts.get("jet_losttrack_deta").back());
+      jet_losttrack_dphi.push_back(fts.get("jet_losttrack_dphi").back());
+      jet_losttrack_eta.push_back(fts.get("jet_losttrack_eta").back());
+      jet_losttrack_charge.push_back(fts.get("jet_losttrack_charge").back());
+      jet_losttrack_frompv.push_back(fts.get("jet_losttrack_frompv").back());
+      jet_losttrack_track_chi2.push_back(fts.get("jet_losttrack_track_chi2").back());
+      jet_losttrack_track_qual.push_back(fts.get("jet_losttrack_track_qual").back());
+      jet_losttrack_dz.push_back(fts.get("jet_losttrack_dz").back());
+      jet_losttrack_dxy.push_back(fts.get("jet_losttrack_dxy").back());
+      jet_losttrack_dxysig.push_back(fts.get("jet_losttrack_dxysig").back());
+      jet_losttrack_dzsig.push_back(fts.get("jet_losttrack_dzsig").back());
+      jet_losttrack_etarel.push_back(fts.get("jet_losttrack_etarel").back());
+      jet_losttrack_npixhits.push_back(fts.get("jet_losttrack_npixhits").back());
+      jet_losttrack_nstriphits.push_back(fts.get("jet_losttrack_nstriphits").back());
+      jet_losttrack_trackjet_d3d.push_back(fts.get("jet_losttrack_trackjet_d3d").back());
+      jet_losttrack_trackjet_d3dsig.push_back(fts.get("jet_losttrack_trackjet_d3dsig").back());
+      jet_losttrack_trackjet_dist.push_back(fts.get("jet_losttrack_trackjet_dist").back());
+      jet_losttrack_trackjet_decayL.push_back(fts.get("jet_losttrack_trackjet_decayL").back());
+    }
   }
 }
 
